@@ -3,15 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mando Cloud | Final Check</title>
+    <title>Mando Cloud | Fast Delete</title>
     <style>
-        :root { --accent: #0088cc; --secret: #7000ff; --bg: #0a0b10; --text: #fff; }
+        :root { --accent: #0088cc; --secret: #7000ff; --bg: #0a0b10; --text: #fff; --danger: #ff4444; }
         * { box-sizing: border-box; transition: 0.2s; font-family: 'Segoe UI', sans-serif; }
         body { background: var(--bg); color: var(--text); margin: 0; height: 100vh; display: flex; overflow: hidden; }
         
-        /* EFFETS SURBRILLANCE */
-        .group-item:hover, #sbtn:hover, #st-box:hover { box-shadow: 0 0 15px var(--accent); cursor: pointer; background: rgba(255,255,255,0.1); }
-
         /* LOCK SCREEN */
         #lock-screen { position: fixed; inset: 0; background: #000; z-index: 10005; display: flex; align-items: center; justify-content: center; }
         .lock-box { padding: 40px; border: 2px solid var(--accent); border-radius: 20px; background: #0e1018; width: 320px; text-align: center; }
@@ -21,23 +18,26 @@
         .sidebar { width: 260px; background: rgba(23, 28, 41, 0.8); border-right: 1px solid #222; padding: 20px; display: flex; flex-direction: column; }
         .group-item { padding: 12px; border-radius: 10px; margin-bottom: 8px; color: #888; border: 1px solid transparent; cursor: pointer; }
         .group-item.active { border-color: var(--accent); background: rgba(0,136,204,0.1); color: #fff; font-weight: bold; }
+        .group-item:hover { background: rgba(255,255,255,0.05); color: #fff; box-shadow: 0 0 10px var(--accent); }
+        .btn-deco { margin-top: 15px; background: rgba(255, 68, 68, 0.1); color: var(--danger); border: 1px solid var(--danger); padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; text-transform: uppercase; }
+        .btn-deco:hover { background: var(--danger); color: #fff; box-shadow: 0 0 20px var(--danger); }
 
-        /* BUBBLES & EPINGLAGE */
+        /* CHAT */
         .main { flex: 1; display: flex; flex-direction: column; }
         #chat { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
         .bubble { background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px; border-left: 4px solid var(--accent); align-self: flex-start; max-width: 80%; position: relative; }
-        .bubble.pinned { border-left-color: gold; background: rgba(255, 215, 0, 0.1); box-shadow: 0 0 10px rgba(255, 215, 0, 0.2); }
+        .bubble.pinned { border-left-color: gold; background: rgba(255, 215, 0, 0.1); }
         .img-preview { max-width: 280px; border-radius: 8px; margin-top: 8px; cursor: pointer; }
 
+        /* VISIONNEUSE */
+        #gallery { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 10001; display: none; align-items: center; justify-content: center; flex-direction: column; }
+        #gal-img { max-width: 85%; max-height: 75vh; border-radius: 10px; }
+        
         /* CONTEXT MENU */
         #context-menu { position: fixed; background: #1c1f2b; border: 1px solid #444; border-radius: 8px; z-index: 10000; display: none; box-shadow: 0 10px 30px #000; min-width: 180px; }
         .menu-item { padding: 10px 15px; font-size: 0.8rem; cursor: pointer; color: #eee; border-bottom: 1px solid #333; }
         .menu-item:hover { background: var(--accent); }
 
-        /* VISIONNEUSE */
-        #gallery { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 10001; display: none; align-items: center; justify-content: center; flex-direction: column; }
-        #gal-img { max-width: 85%; max-height: 75vh; border-radius: 10px; transition: 0.3s; }
-        
         #st-box { margin-top: auto; padding: 15px; background: rgba(255,255,255,0.03); border-radius: 12px; cursor: pointer; }
         #st-fill { height: 4px; background: var(--accent); width: 0%; margin-top: 8px; transition: 1s; }
         
@@ -79,6 +79,7 @@
             </div>
             <div style="background:#222; height:4px;"><div id="st-fill"></div></div>
         </div>
+        <button class="btn-deco" onclick="logout()">🔒 Déconnexion</button>
     </aside>
 
     <main class="main">
@@ -104,7 +105,7 @@
         const db = getFirestore(app);
         const storage = getStorage(app);
 
-        // --- CHECK 1: AUTHENTIFICATION ---
+        // --- AUTH ---
         const linput = document.getElementById('linput');
         linput.oninput = () => {
             if (linput.value === "1704") {
@@ -117,6 +118,12 @@
             document.getElementById('lock-screen').style.display = 'none';
         }
 
+        window.logout = () => {
+            localStorage.removeItem('mando_auth');
+            location.reload();
+        };
+
+        // --- STATE & SYNC ---
         let currentFolder = "genesis";
         let isSecret = false;
         let imagesList = [];
@@ -124,7 +131,6 @@
         let unsubscribe = null;
         const folders = ['genesis', 'projets', 'photos', 'archives'];
 
-        // --- CHECK 2: SYNCHRO & SURBRILLANCE ---
         function startSync() {
             if (unsubscribe) unsubscribe();
             const folderPath = isSecret ? `secret_${currentFolder}` : currentFolder;
@@ -148,12 +154,13 @@
                     }
                 });
                 chat.scrollTop = chat.scrollHeight;
-                document.getElementById('st-perc').innerText = ((totalSize / 2000000000) * 100).toFixed(2) + "%";
-                document.getElementById('st-fill').style.width = (totalSize / 2000000000) * 100 + "%";
+                const perc = (totalSize / 2000000000) * 100;
+                document.getElementById('st-perc').innerText = perc.toFixed(2) + "%";
+                document.getElementById('st-fill').style.width = perc + "%";
             });
         }
 
-        // --- CHECK 3: VISIONNEUSE & TOUCHES ---
+        // --- GALLERY ---
         window.addEventListener('keydown', (e) => {
             if (document.getElementById('gallery').style.display === 'flex') {
                 if (e.key === "ArrowRight") { currentImgIdx = (currentImgIdx + 1) % imagesList.length; updateGal(); }
@@ -174,7 +181,7 @@
             });
         }
 
-        // --- CHECK 4: CLIC DROIT & GROUPES ---
+        // --- CONTEXT MENU (DELETE FIX) ---
         window.openMenu = (e, id, data) => {
             e.preventDefault();
             const menu = document.getElementById('context-menu');
@@ -189,17 +196,17 @@
         };
         window.hideMenu = () => document.getElementById('context-menu').style.display = 'none';
 
-        // --- ACTIONS FIREBASE ---
+        // --- FIREBASE ACTIONS ---
         window.moveMsg = async (id, target) => { await updateDoc(doc(db, "messages", id), { folder: isSecret ? `secret_${target}` : target }); };
         window.pinMsg = async (id, val) => await updateDoc(doc(db, "messages", id), { isPinned: val });
-        window.delMsg = async (id) => { if(confirm("Supprimer ?")) await deleteDoc(doc(db, "messages", id)); };
+        window.delMsg = async (id) => { await deleteDoc(doc(db, "messages", id)); }; // Suppression directe
+        
         window.setFolder = (el, name) => {
             document.querySelectorAll('.group-item').forEach(i => i.classList.remove('active'));
             el.classList.add('active'); currentFolder = name; startSync();
         };
         window.toggleSecret = () => { isSecret = !isSecret; document.body.classList.toggle('vault-mode', isSecret); startSync(); };
 
-        // --- CHECK 5: ENVOI & IMAGES ---
         const send = async () => {
             const inp = document.getElementById('minput'); if (!inp.value.trim()) return;
             await addDoc(collection(db, "messages"), { text: inp.value, folder: isSecret ? `secret_${currentFolder}` : currentFolder, createdAt: serverTimestamp(), isPinned: false, type: 'text' });
