@@ -3,133 +3,200 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mando Cloud - Privé</title>
+    <title>Mando Cloud Platinum</title>
     <style>
-        :root { --bg: #36393f; --panel: #2f3136; --msg-bg: #40444b; --accent: #5865f2; --text: #dcddde; }
-        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background: var(--bg); color: var(--text); margin: 0; display: flex; flex-direction: column; height: 100vh; }
+        :root { 
+            --discord-blurple: #5865f2; --bg-dark: #1e1f22; --panel-dark: #2b2d31; 
+            --text-main: #dbdee1; --text-muted: #949ba4; --danger: #f23f42; --star: #faa61a;
+        }
         
-        /* Liste des messages */
-        #chat-container { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 10px; padding-bottom: 80px; }
-        .message-card { background: var(--msg-bg); padding: 12px; border-radius: 8px; max-width: 85%; align-self: flex-start; position: relative; }
-        .timestamp { font-size: 0.7rem; color: #72767d; margin-bottom: 4px; display: block; }
-        .message-img { max-width: 100%; border-radius: 5px; margin-top: 8px; display: block; }
+        body { 
+            font-family: 'GG Sans', 'Helvetica Neue', Arial, sans-serif; 
+            background: var(--bg-dark); color: var(--text-main); 
+            margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden;
+        }
 
-        /* Barre d'envoi en bas */
-        .input-area { background: var(--panel); padding: 15px; display: flex; gap: 10px; align-items: center; position: fixed; bottom: 60px; left: 0; right: 0; }
-        input[type="text"] { flex: 1; background: #40444b; border: none; padding: 10px; border-radius: 5px; color: white; outline: none; }
-        
-        /* Barre d'onglets (Navigation) */
-        .nav-bar { height: 60px; background: #202225; display: flex; justify-content: space-around; align-items: center; position: fixed; bottom: 0; left: 0; right: 0; }
-        .nav-item { cursor: pointer; color: #b9bbbe; font-size: 0.8rem; text-decoration: none; text-align: center; }
-        .nav-item:hover { color: white; }
-        .nav-item.active { color: var(--accent); font-weight: bold; }
+        /* --- Header Stylé --- */
+        .app-header { 
+            padding: 15px 20px; background: rgba(30, 31, 34, 0.8); 
+            backdrop-filter: blur(10px); border-bottom: 1px solid #3f4147;
+            display: flex; justify-content: space-between; align-items: center; z-index: 100;
+        }
 
-        /* Boutons */
-        .btn { background: var(--accent); border: none; color: white; padding: 10px; border-radius: 5px; cursor: pointer; font-weight: bold; }
-        .file-label { background: #4f545c; padding: 8px; border-radius: 5px; cursor: pointer; font-size: 20px; }
+        /* --- Chat Flow --- */
+        #chat-container { 
+            flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 8px;
+            scroll-behavior: smooth; padding-bottom: 160px;
+        }
+
+        /* --- Bulles de Message (Inspi Telegram/Discord) --- */
+        .message-wrapper { display: flex; flex-direction: column; margin-bottom: 4px; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .message-card { 
+            background: var(--panel-dark); padding: 10px 14px; border-radius: 12px; 
+            max-width: 75%; position: relative; border: 1px solid transparent; transition: all 0.2s;
+        }
+        .message-card:hover { background: #35373c; border-color: #4e5058; }
+        .message-card.is-fav { border-left: 4px solid var(--star); box-shadow: 0 0 10px rgba(250, 166, 26, 0.1); }
+
+        .timestamp { font-size: 0.65rem; color: var(--text-muted); margin-bottom: 4px; }
+        .content { font-size: 0.95rem; line-height: 1.4; word-wrap: break-word; }
+
+        .message-img { 
+            max-width: 100%; border-radius: 8px; margin-top: 8px; 
+            cursor: zoom-in; transition: transform 0.2s; border: 1px solid #232428;
+        }
+        .message-img:hover { transform: scale(1.02); }
+
+        /* --- Actions flottantes --- */
+        .msg-actions { 
+            position: absolute; right: -80px; top: 50%; transform: translateY(-50%);
+            display: flex; gap: 5px; opacity: 0; transition: 0.2s;
+        }
+        .message-wrapper:hover .msg-actions { opacity: 1; right: 10px; }
+
+        .mini-btn { 
+            background: #1e1f22; border-radius: 4px; padding: 4px 8px; 
+            cursor: pointer; font-size: 12px; border: 1px solid #3f4147;
+        }
+        .mini-btn:hover { background: var(--discord-blurple); }
+
+        /* --- Barre d'envoi type "Snap" --- */
+        .input-container { 
+            position: fixed; bottom: 75px; left: 15px; right: 15px; 
+            background: #383a40; border-radius: 25px; padding: 5px 15px;
+            display: flex; align-items: center; gap: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+        .input-container input { 
+            flex: 1; background: transparent; border: none; color: white; 
+            padding: 12px; outline: none; font-size: 1rem;
+        }
+
+        /* --- Bottom Nav --- */
+        .nav-bar { 
+            height: 65px; background: #111214; display: flex; 
+            justify-content: space-around; align-items: center; position: fixed; bottom: 0; width: 100%;
+        }
+        .nav-item { 
+            color: var(--text-muted); cursor: pointer; display: flex; flex-direction: column; 
+            align-items: center; font-size: 0.7rem; gap: 4px; transition: 0.2s;
+        }
+        .nav-item i { font-size: 1.4rem; }
+        .nav-item.active { color: var(--discord-blurple); }
+
+        .link { color: #00a8fc; text-decoration: none; font-weight: 500; }
+        .link:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
 
+    <header class="app-header">
+        <div style="font-weight: bold; letter-spacing: 1px;">MANDO <span style="color:var(--discord-blurple)">CLOUD</span></div>
+        <div id="group-title" style="font-size: 0.8rem; color: var(--text-muted);"># général</div>
+    </header>
+
     <div id="chat-container"></div>
 
-    <div class="input-area">
-        <label class="file-label" title="Envoyer une image">
-            🖼️ <input type="file" id="imageInput" hidden accept="image/*">
+    <div class="input-container">
+        <label style="cursor:pointer; font-size: 1.2rem;">
+            📸 <input type="file" id="imageInput" hidden accept="image/*">
         </label>
-        <input type="text" id="msgInput" placeholder="Écris un message ou colle un lien...">
-        <button id="sendBtn" class="btn">Envoyer</button>
+        <input type="text" id="msgInput" placeholder="Envoyer un message...">
+        <button id="sendBtn" style="background:none; border:none; font-size: 1.5rem; cursor:pointer;">⚡</button>
     </div>
 
     <nav class="nav-bar">
-        <a href="#" class="nav-item active">💬 Général</a>
-        <a href="#" class="nav-item">👥 Groupes</a>
-        <a href="#" class="nav-item">📁 Fichiers</a>
-        <a href="#" class="nav-item">⚙️ Paramètres</a>
+        <div class="nav-item active" onclick="switchGroup('general', this, '# général')"><i>💬</i><span>Chat</span></div>
+        <div class="nav-item" onclick="switchGroup('media', this, '# médias')"><i>🖼️</i><span>Médias</span></div>
+        <div class="nav-item" onclick="switchGroup('links', this, '# liens-utiles')"><i>🔗</i><span>Liens</span></div>
+        <div class="nav-item" onclick="switchGroup('favs', this, '⭐ favoris')"><i>⭐</i><span>Favs</span></div>
     </nav>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, doc, deleteDoc, updateDoc, where } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
         import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
 
-        const firebaseConfig = {
-            projectId: "sation-44d19",
-            storageBucket: "sation-44d19.appspot.com"
-        };
-
+        const firebaseConfig = { projectId: "sation-44d19", storageBucket: "sation-44d19.appspot.com" };
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const storage = getStorage(app);
-        const msgCol = collection(db, "messages");
 
-        const chatContainer = document.getElementById('chat-container');
-        const msgInput = document.getElementById('msgInput');
-        const sendBtn = document.getElementById('sendBtn');
-        const imageInput = document.getElementById('imageInput');
+        let currentGroup = 'general';
+        let unsubscribe = null;
 
-        // FONCTION : Envoyer
-        const sendMessage = async (imageUrl = null) => {
-            const text = msgInput.value.trim();
-            if (text === "" && !imageUrl) return;
-
-            await addDoc(msgCol, {
-                text: text,
-                image: imageUrl,
-                createdAt: serverTimestamp()
-            });
-            msgInput.value = "";
+        const formatText = (text) => {
+            const urlRegex = /(https?:\/\/[^\s]+)/g;
+            return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(urlRegex, (url) => `<a href="${url}" target="_blank" class="link">${url}</a>`);
         };
 
-        sendBtn.onclick = () => sendMessage();
+        window.switchGroup = (groupId, el, title) => {
+            currentGroup = groupId;
+            document.getElementById('group-title').textContent = title;
+            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+            el.classList.add('active');
+            loadMessages();
+        };
 
-        // Gérer l'upload d'image
-        imageInput.onchange = async (e) => {
+        const loadMessages = () => {
+            if (unsubscribe) unsubscribe();
+            const q = (currentGroup === 'favs') 
+                ? query(collection(db, "messages"), where("isFav", "==", true), orderBy("createdAt", "asc"))
+                : query(collection(db, "messages"), where("group", "==", currentGroup), orderBy("createdAt", "asc"));
+
+            unsubscribe = onSnapshot(q, (snap) => {
+                const container = document.getElementById('chat-container');
+                container.innerHTML = "";
+                snap.docs.forEach(d => {
+                    const m = d.data();
+                    const id = d.id;
+                    const time = m.createdAt ? m.createdAt.toDate().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '...';
+                    
+                    const wrap = document.createElement('div');
+                    wrap.className = 'message-wrapper';
+                    wrap.innerHTML = `
+                        <div class="message-card ${m.isFav ? 'is-fav' : ''}">
+                            <div class="timestamp">${time}</div>
+                            <div class="content">
+                                ${m.text ? `<p style="margin:0">${formatText(m.text)}</p>` : ''}
+                                ${m.image ? `<img src="${m.image}" class="message-img" onclick="window.open('${m.image}')">` : ''}
+                            </div>
+                            <div class="msg-actions">
+                                <div class="mini-btn" onclick="toggleFav('${id}', ${m.isFav})">⭐</div>
+                                <div class="mini-btn" onclick="deleteMsg('${id}')">🗑️</div>
+                            </div>
+                        </div>
+                    `;
+                    container.appendChild(wrap);
+                });
+                container.scrollTop = container.scrollHeight;
+            });
+        };
+
+        window.deleteMsg = async (id) => { if(confirm("Supprimer ?")) await deleteDoc(doc(db, "messages", id)); };
+        window.toggleFav = async (id, fav) => { await updateDoc(doc(db, "messages", id), { isFav: !fav }); };
+
+        const send = async (url = null) => {
+            const input = document.getElementById('msgInput');
+            if(!input.value.trim() && !url) return;
+            await addDoc(collection(db, "messages"), {
+                text: input.value, image: url, group: currentGroup, isFav: false, createdAt: serverTimestamp()
+            });
+            input.value = "";
+        };
+
+        document.getElementById('sendBtn').onclick = () => send();
+        document.getElementById('msgInput').onkeypress = (e) => { if(e.key === 'Enter') send(); };
+        document.getElementById('imageInput').onchange = async (e) => {
             const file = e.target.files[0];
-            if (!file) return;
-
-            const storageRef = ref(storage, 'chat_images/' + Date.now() + "_" + file.name);
-            await uploadBytes(storageRef, file);
-            const url = await getDownloadURL(storageRef);
-            sendMessage(url);
+            if(!file) return;
+            const refImg = ref(storage, `cloud/${Date.now()}_${file.name}`);
+            await uploadBytes(refImg, file);
+            send(await getDownloadURL(refImg));
         };
 
-        // Affichage en temps réel (Anti-Injection & Date)
-        const q = query(msgCol, orderBy("createdAt", "asc"));
-        onSnapshot(q, (snapshot) => {
-            chatContainer.innerHTML = "";
-            snapshot.docs.forEach(doc => {
-                const data = doc.data();
-                const div = document.createElement('div');
-                div.className = "message-card";
-
-                // Formatage de la date
-                const date = data.createdAt ? data.createdAt.toDate().toLocaleString('fr-FR', {hour: '2-digit', minute:'2-digit'}) : "...";
-                
-                // On utilise textContent pour la sécurité (Anti-XSS)
-                const timeSpan = document.createElement('span');
-                timeSpan.className = "timestamp";
-                timeSpan.textContent = date;
-                div.appendChild(timeSpan);
-
-                if (data.text) {
-                    const textP = document.createElement('p');
-                    textP.style.margin = "0";
-                    textP.textContent = data.text; // SÉCURITÉ ICI
-                    div.appendChild(textP);
-                }
-
-                if (data.image) {
-                    const img = document.createElement('img');
-                    img.src = data.image;
-                    img.className = "message-img";
-                    div.appendChild(img);
-                }
-
-                chatContainer.appendChild(div);
-            });
-            chatContainer.scrollTop = chatContainer.scrollHeight;
-        });
+        loadMessages();
     </script>
 </body>
 </html>
