@@ -1,80 +1,56 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>Mon Cloud Perso</title>
+    <title>Mon Discord Privé</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #0f172a; color: white; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
-        .card { background: #1e293b; padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); text-align: center; width: 350px; }
-        input[type="file"] { margin: 20px 0; color: #94a3b8; }
-        button { background: #38bdf8; color: white; border: none; padding: 12px 25px; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; }
-        button:hover { background: #0ea5e9; }
-        #status { margin-top: 15px; font-size: 14px; color: #10b981; }
-        .loader { display: none; margin: 10px auto; border: 3px solid #f3f3f3; border-top: 3px solid #38bdf8; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        body { font-family: sans-serif; background: #36393f; color: white; padding: 20px; }
+        #messages { height: 400px; overflow-y: scroll; border: 1px solid #202225; background: #2f3136; padding: 10px; margin-bottom: 10px; border-radius: 8px; }
+        .msg { background: #40444b; padding: 8px; margin: 5px 0; border-radius: 5px; }
+        input { width: 80%; padding: 10px; border-radius: 5px; border: none; }
+        button { padding: 10px; background: #5865f2; color: white; border: none; border-radius: 5px; cursor: pointer; }
     </style>
 </head>
 <body>
 
-<div class="card">
-    <h1>📁 Mon Cloud</h1>
-    <p>Sélectionne un fichier à stocker</p>
-    
-    <input type="file" id="filePicker">
-    <button id="uploadBtn">Envoyer sur Firebase</button>
-    
-    <div class="loader" id="loader"></div>
-    <div id="status"></div>
-</div>
+    <h2>💬 Mon Stockage de Messages</h2>
+    <div id="messages"></div>
+    <input type="text" id="msgInput" placeholder="Écris un message ou colle un lien...">
+    <button id="sendBtn">Envoyer</button>
 
-<script type="module">
-    // 1. Importation des outils Firebase Storage
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-    import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
-    // 2. Ta config (Vérifie bien l'URL)
-    const firebaseConfig = {
-        databaseURL: "https://sation-44d19-default-rtdb.europe-west1.firebasedatabase.app",
-        storageBucket: "sation-44d19.appspot.com" // C'est souvent l'ID de ton projet + .appspot.com
-    };
+        const firebaseConfig = {
+            databaseURL: "https://sation-44d19-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "sation-44d19" 
+        };
 
-    const app = initializeApp(firebaseConfig);
-    const storage = getStorage(app);
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const colRef = collection(db, "messages");
 
-    const filePicker = document.getElementById('filePicker');
-    const uploadBtn = document.getElementById('uploadBtn');
-    const status = document.getElementById('status');
-    const loader = document.getElementById('loader');
+        // Envoyer un message
+        document.getElementById('sendBtn').onclick = async () => {
+            const text = document.getElementById('msgInput').value;
+            if(text) {
+                await addDoc(colRef, { text: text, date: Date.now() });
+                document.getElementById('msgInput').value = '';
+            }
+        };
 
-    uploadBtn.onclick = async () => {
-        const file = filePicker.files[0];
-        if (!file) {
-            alert("Choisis un fichier d'abord !");
-            return;
-        }
-
-        status.textContent = "Envoi en cours...";
-        loader.style.display = "block";
-
-        try {
-            // Créer une référence dans Storage avec le nom du fichier
-            const storageRef = ref(storage, 'mes_fichiers/' + file.name);
-            
-            // Envoyer le fichier
-            await uploadBytes(storageRef, file);
-            
-            // Récupérer le lien pour le voir
-            const url = await getDownloadURL(storageRef);
-            
-            loader.style.display = "none";
-            status.innerHTML = `✅ Réussi ! <br><a href="${url}" target="_blank" style="color:#38bdf8">Voir le fichier</a>`;
-        } catch (error) {
-            console.error(error);
-            loader.style.display = "none";
-            status.textContent = "❌ Erreur d'envoi. Vérifie tes Rules.";
-        }
-    };
-</script>
-
+        // Lire les messages en temps réel (Comme Discord)
+        const q = query(colRef, orderBy("date", "asc"));
+        onSnapshot(q, (snapshot) => {
+            let html = '';
+            snapshot.docs.forEach(doc => {
+                html += `<div class="msg">${doc.data().text}</div>`;
+            });
+            document.getElementById('messages').innerHTML = html;
+            // Scroll automatique vers le bas
+            const div = document.getElementById('messages');
+            div.scrollTop = div.scrollHeight;
+        });
+    </script>
 </body>
 </html>
