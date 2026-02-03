@@ -3,47 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mando Cloud | Ultra Stable</title>
+    <title>Mando Cloud | Navigation Pro</title>
     <style>
         :root { --accent: #0088cc; --secret: #7000ff; --bg: #0a0b10; --text: #fff; }
         * { box-sizing: border-box; transition: 0.2s; font-family: 'Segoe UI', sans-serif; }
         body { background: var(--bg); color: var(--text); margin: 0; height: 100vh; display: flex; overflow: hidden; }
         
-        /* HOVER ET GLOW SUR LES BOUTONS */
+        /* EFFETS GLOW */
         .group-item:hover, #sbtn:hover, #st-box:hover { box-shadow: 0 0 15px var(--accent); cursor: pointer; background: rgba(255,255,255,0.1); }
 
         /* LOCK SCREEN */
         #lock-screen { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; align-items: center; justify-content: center; }
         .lock-box { padding: 40px; border: 2px solid var(--accent); border-radius: 20px; background: #0e1018; width: 320px; text-align: center; }
         .lock-input { background: #000; border: 1px solid var(--accent); color: #fff; padding: 15px; border-radius: 8px; font-size: 1.5rem; width: 100%; text-align: center; outline: none; letter-spacing: 4px; }
-        #lmsg { margin-top: 20px; font-weight: bold; padding: 10px; border-radius: 8px; display: none; }
 
-        /* SIDEBAR ET NAVIGATION */
+        /* SIDEBAR */
         .sidebar { width: 260px; background: rgba(23, 28, 41, 0.8); border-right: 1px solid #222; padding: 20px; display: flex; flex-direction: column; }
         .group-item { padding: 12px; border-radius: 10px; margin-bottom: 8px; color: #888; border: 1px solid transparent; cursor: pointer; }
-        .group-item.active { border-color: var(--accent); background: rgba(0,136,204,0.1); color: #fff; }
+        .group-item.active { border-color: var(--accent); background: rgba(0,136,204,0.1); color: #fff; font-weight: bold; }
 
         /* CHAT */
         .main { flex: 1; display: flex; flex-direction: column; }
         #chat { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
         .bubble { background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px; border-left: 4px solid var(--accent); align-self: flex-start; max-width: 80%; }
-        .bubble a { color: #00b3ff; }
-        .img-preview { max-width: 100%; border-radius: 8px; margin-top: 8px; cursor: pointer; }
+        .img-preview { max-width: 280px; border-radius: 8px; margin-top: 8px; cursor: pointer; border: 1px solid transparent; }
+        .img-preview:hover { border-color: var(--accent); }
 
-        /* INPUT BAR */
+        /* GALERIE AVANCÉE */
+        #gallery { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 10000; display: none; align-items: center; justify-content: center; flex-direction: column; }
+        #gal-img { max-width: 85%; max-height: 75vh; border-radius: 10px; box-shadow: 0 0 30px #000; }
+        #gal-thumbs { display: flex; gap: 10px; margin-top: 20px; overflow-x: auto; max-width: 90%; padding: 10px; }
+        .thumb { width: 60px; height: 60px; object-fit: cover; opacity: 0.3; cursor: pointer; border-radius: 5px; border: 2px solid transparent; }
+        .thumb.active { opacity: 1; border-color: var(--accent); }
+
+        /* INPUT */
         .input-bar { padding: 20px; background: #0e1018; display: flex; gap: 10px; border-top: 1px solid #222; }
         #minput { flex: 1; background: #000; border: 1px solid #333; color: #fff; padding: 12px; border-radius: 8px; outline: none; }
         #sbtn { background: var(--accent); color: white; border: none; padding: 0 20px; border-radius: 8px; cursor: pointer; font-weight: bold; }
 
-        /* SECRET & FOCUS */
+        /* MODES */
         body.vault-mode { --accent: var(--secret); }
         body.focus-mode .sidebar, body.focus-mode .input-bar { display: none; }
-        #st-box { margin-top: auto; padding: 15px; background: rgba(255,255,255,0.03); border-radius: 12px; cursor: pointer; }
-        #st-fill { height: 4px; background: var(--accent); width: 0%; margin-top: 8px; }
-
-        /* GALERIE */
-        #gallery { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 10000; display: none; align-items: center; justify-content: center; flex-direction: column; }
-        #gal-img { max-width: 90%; max-height: 80vh; }
+        #st-box { margin-top: auto; padding: 15px; background: rgba(255,255,255,0.03); border-radius: 12px; }
+        #st-fill { height: 4px; background: var(--accent); width: 0%; margin-top: 8px; transition: 1s; }
     </style>
 </head>
 <body oncontextmenu="return false;">
@@ -52,13 +54,13 @@
         <div class="lock-box">
             <h2 style="color:var(--accent)">MANDO CLOUD</h2>
             <input type="password" id="linput" class="lock-input" placeholder="CODE" maxlength="4">
-            <div id="lmsg"></div>
         </div>
     </div>
 
     <div id="gallery" onclick="this.style.display='none'">
         <img id="gal-img" src="">
-        <p style="color:white; margin-top:10px;">Clique pour fermer</p>
+        <div id="gal-thumbs" onclick="event.stopPropagation()"></div>
+        <p style="color:#555; font-size:0.8rem; margin-top:10px;">Flèches ← → pour naviguer • ESC pour fermer</p>
     </div>
 
     <aside class="sidebar">
@@ -92,77 +94,95 @@
         import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
 
         const firebaseConfig = {
-            apiKey: "AIzaSyC4_4agQc-TefAeZNgTZvQMkCg7VUzq4ko",
-            authDomain: "door-52b7f.firebaseapp.com",
-            projectId: "door-52b7f",
-            storageBucket: "door-52b7f.firebasestorage.app",
-            messagingSenderId: "225584391077",
-            appId: "1:225584391077:web:8bf224eedc0b42a5e13e4c"
+            apiKey: "AIzaSyC4_4agQc-TefAeZNgTZvQMkCg7VUzq4ko", authDomain: "door-52b7f.firebaseapp.com",
+            projectId: "door-52b7f", storageBucket: "door-52b7f.firebasestorage.app",
+            messagingSenderId: "225584391077", appId: "1:225584391077:web:8bf224eedc0b42a5e13e4c"
         };
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const storage = getStorage(app);
 
-        // 1. GESTION DU CODE
-        const linput = document.getElementById('linput');
-        linput.addEventListener('input', () => {
-            if(linput.value === "1704") {
+        // --- AUTH ---
+        document.getElementById('linput').addEventListener('input', (e) => {
+            if(e.target.value === "1704") {
                 localStorage.setItem('mando_logged', 'true');
                 location.reload();
-            } else if(linput.value.length === 4) {
-                linput.value = "";
-                alert("Mauvais code !");
+            }
+        });
+        if(localStorage.getItem('mando_logged') === 'true') document.getElementById('lock-screen').style.display = 'none';
+
+        // --- STATE ---
+        let currentFolder = "genesis";
+        let isSecret = false;
+        let imagesList = [];
+        let currentImgIdx = 0;
+        let unsubscribe = null;
+
+        // --- NAVIGATION IMAGE ---
+        window.openGal = (url) => {
+            currentImgIdx = imagesList.indexOf(url);
+            updateGalUI();
+            document.getElementById('gallery').style.display = 'flex';
+        };
+
+        function updateGalUI() {
+            document.getElementById('gal-img').src = imagesList[currentImgIdx];
+            const thumbs = document.getElementById('gal-thumbs');
+            thumbs.innerHTML = "";
+            imagesList.forEach((src, idx) => {
+                const img = document.createElement('img');
+                img.src = src;
+                img.className = `thumb ${idx === currentImgIdx ? 'active' : ''}`;
+                img.onclick = (e) => { e.stopPropagation(); currentImgIdx = idx; updateGalUI(); };
+                thumbs.appendChild(img);
+            });
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if(e.key.toLowerCase() === 'f') document.body.classList.toggle('focus-mode');
+            if(document.getElementById('gallery').style.display === 'flex') {
+                if(e.key === "ArrowRight") { currentImgIdx = (currentImgIdx + 1) % imagesList.length; updateGalUI(); }
+                if(e.key === "ArrowLeft") { currentImgIdx = (currentImgIdx - 1 + imagesList.length) % imagesList.length; updateGalUI(); }
+                if(e.key === "Escape") document.getElementById('gallery').style.display = 'none';
             }
         });
 
-        if(localStorage.getItem('mando_logged') === 'true') {
-            document.getElementById('lock-screen').style.display = 'none';
-        }
-
-        // 2. VARIABLES DE NAVIGATION
-        let currentFolder = "genesis";
-        let isSecret = false;
-        let unsubscribe = null;
-
-        // 3. FONCTION DE CHARGEMENT (SYNCHRO)
+        // --- SYNC ---
         function startSync() {
-            if(unsubscribe) unsubscribe(); // Nettoyer l'ancienne connexion
+            if(unsubscribe) unsubscribe();
+            const folderPath = isSecret ? `secret_${currentFolder}` : currentFolder;
             
-            const folderName = isSecret ? `secret_${currentFolder}` : currentFolder;
-            console.log("Chargement du dossier :", folderName);
-
-            const q = query(collection(db, "messages"), orderBy("createdAt", "asc"));
-            
-            unsubscribe = onSnapshot(q, (snapshot) => {
+            unsubscribe = onSnapshot(query(collection(db, "messages"), orderBy("createdAt", "asc")), (snap) => {
                 const chat = document.getElementById('chat');
                 chat.innerHTML = "";
+                imagesList = [];
                 let totalSize = 0;
 
-                snapshot.forEach((doc) => {
-                    const data = doc.data();
-                    if(data.folder === folderName) {
-                        totalSize += (data.fileSize || 0);
+                snap.forEach(doc => {
+                    const m = doc.data();
+                    if(m.folder === folderPath) {
+                        totalSize += (m.fileSize || 0);
+                        if(m.type === 'image') imagesList.push(m.url);
+                        
                         const div = document.createElement('div');
                         div.className = "bubble";
                         div.innerHTML = `
-                            <div style="font-size:0.6rem; opacity:0.5;">${data.createdAt?.toDate().toLocaleTimeString() || '...'}</div>
-                            ${data.text ? `<p style="margin:5px 0 0;">${data.text.replace(/https?:\/\/[^\s]+/g, '<a href="$&" target="_blank">$&</a>')}</p>` : ''}
-                            ${data.type === 'image' ? `<img src="${data.url}" class="img-preview" onclick="showImg('${data.url}')">` : ''}
+                            <div style="font-size:0.6rem; opacity:0.5;">${m.createdAt?.toDate().toLocaleTimeString() || '...'}</div>
+                            ${m.text ? `<p style="margin:5px 0 0;">${m.text.replace(/https?:\/\/[^\s]+/g, '<a href="$&" target="_blank">$&</a>')}</p>` : ''}
+                            ${m.type === 'image' ? `<img src="${m.url}" class="img-preview" onclick="openGal('${m.url}')">` : ''}
                         `;
                         chat.appendChild(div);
                     }
                 });
                 chat.scrollTop = chat.scrollHeight;
-                
-                // Update stockage (Max 2Go)
                 const perc = (totalSize / 2000000000) * 100;
                 document.getElementById('st-perc').innerText = perc.toFixed(2) + "%";
                 document.getElementById('st-fill').style.width = perc + "%";
             });
         }
 
-        // 4. BOUTONS SIDEBAR
+        // --- ACTIONS ---
         window.setFolder = (el, name) => {
             document.querySelectorAll('.group-item').forEach(i => i.classList.remove('active'));
             el.classList.add('active');
@@ -176,62 +196,37 @@
             startSync();
         };
 
-        // 5. ENVOI DE MESSAGE
-        async function sendMessage() {
+        const send = async () => {
             const inp = document.getElementById('minput');
-            const val = inp.value.trim();
-            if(!val) return;
+            if(!inp.value.trim()) return;
+            await addDoc(collection(db, "messages"), { 
+                text: inp.value, 
+                folder: isSecret ? `secret_${currentFolder}` : currentFolder, 
+                createdAt: serverTimestamp(), 
+                type: 'text' 
+            });
+            inp.value = "";
+        };
 
-            const folderName = isSecret ? `secret_${currentFolder}` : currentFolder;
-            try {
-                await addDoc(collection(db, "messages"), {
-                    text: val,
-                    folder: folderName,
-                    createdAt: serverTimestamp(),
-                    type: 'text'
-                });
-                inp.value = "";
-            } catch(e) { console.error("Erreur envoi:", e); }
-        }
+        document.getElementById('sbtn').onclick = send;
+        document.getElementById('minput').onkeydown = (e) => { if(e.key === 'Enter') send(); };
 
-        document.getElementById('sbtn').onclick = sendMessage;
-        document.getElementById('minput').onkeydown = (e) => { if(e.key === 'Enter') sendMessage(); };
-
-        // 6. UPLOAD FICHIER
         document.getElementById('fup').onchange = async (e) => {
             const file = e.target.files[0];
             if(!file) return;
-
-            const folderName = isSecret ? `secret_${currentFolder}` : currentFolder;
-            const storageRef = ref(storage, `${folderName}/${Date.now()}_${file.name}`);
-            const uploadTask = uploadBytesResumable(storageRef, file);
-
-            uploadTask.on('state_changed', null, null, async () => {
-                const url = await getDownloadURL(uploadTask.snapshot.ref);
-                await addDoc(collection(db, "messages"), {
-                    url: url,
-                    type: file.type.startsWith('image/') ? 'image' : 'file',
-                    fileName: file.name,
-                    fileSize: file.size,
-                    folder: folderName,
-                    createdAt: serverTimestamp()
+            const path = isSecret ? `secret_${currentFolder}` : currentFolder;
+            const sRef = ref(storage, `${path}/${Date.now()}_${file.name}`);
+            const task = uploadBytesResumable(sRef, file);
+            task.on('state_changed', null, null, async () => {
+                const url = await getDownloadURL(task.snapshot.ref);
+                await addDoc(collection(db, "messages"), { 
+                    url, type: file.type.startsWith('image/') ? 'image' : 'file', 
+                    fileName: file.name, fileSize: file.size, folder: path, createdAt: serverTimestamp() 
                 });
             });
         };
 
-        // 7. GALERIE ET FOCUS
-        window.showImg = (url) => {
-            document.getElementById('gal-img').src = url;
-            document.getElementById('gallery').style.display = 'flex';
-        };
-
-        window.onkeydown = (e) => {
-            if(e.key.toLowerCase() === 'f') document.body.classList.toggle('focus-mode');
-        };
-
-        // LANCEMENT INITIAL
         startSync();
-
     </script>
 </body>
 </html>
