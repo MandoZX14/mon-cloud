@@ -3,50 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mando Cloud | Fast Delete</title>
+    <title>Mando Cloud | Fix 1704</title>
     <style>
         :root { --accent: #0088cc; --secret: #7000ff; --bg: #0a0b10; --text: #fff; --danger: #ff4444; }
         * { box-sizing: border-box; transition: 0.2s; font-family: 'Segoe UI', sans-serif; }
         body { background: var(--bg); color: var(--text); margin: 0; height: 100vh; display: flex; overflow: hidden; }
         
-        /* LOCK SCREEN */
         #lock-screen { position: fixed; inset: 0; background: #000; z-index: 10005; display: flex; align-items: center; justify-content: center; }
         .lock-box { padding: 40px; border: 2px solid var(--accent); border-radius: 20px; background: #0e1018; width: 320px; text-align: center; }
         .lock-input { background: #000; border: 1px solid var(--accent); color: #fff; padding: 15px; border-radius: 8px; font-size: 1.5rem; width: 100%; text-align: center; outline: none; letter-spacing: 4px; }
 
-        /* SIDEBAR */
         .sidebar { width: 260px; background: rgba(23, 28, 41, 0.8); border-right: 1px solid #222; padding: 20px; display: flex; flex-direction: column; }
-        .group-item { padding: 12px; border-radius: 10px; margin-bottom: 8px; color: #888; border: 1px solid transparent; cursor: pointer; }
+        .group-item { padding: 12px; border-radius: 10px; margin-bottom: 8px; color: #888; cursor: pointer; border: 1px solid transparent; }
         .group-item.active { border-color: var(--accent); background: rgba(0,136,204,0.1); color: #fff; font-weight: bold; }
-        .group-item:hover { background: rgba(255,255,255,0.05); color: #fff; box-shadow: 0 0 10px var(--accent); }
-        .btn-deco { margin-top: 15px; background: rgba(255, 68, 68, 0.1); color: var(--danger); border: 1px solid var(--danger); padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; text-transform: uppercase; }
-        .btn-deco:hover { background: var(--danger); color: #fff; box-shadow: 0 0 20px var(--danger); }
+        .btn-deco { margin-top: 15px; background: rgba(255, 68, 68, 0.1); color: var(--danger); border: 1px solid var(--danger); padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; }
 
-        /* CHAT */
         .main { flex: 1; display: flex; flex-direction: column; }
         #chat { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
-        .bubble { background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px; border-left: 4px solid var(--accent); align-self: flex-start; max-width: 80%; position: relative; }
-        .bubble.pinned { border-left-color: gold; background: rgba(255, 215, 0, 0.1); }
-        .img-preview { max-width: 280px; border-radius: 8px; margin-top: 8px; cursor: pointer; }
-
-        /* VISIONNEUSE */
+        .bubble { background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px; border-left: 4px solid var(--accent); align-self: flex-start; max-width: 80%; }
+        
         #gallery { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 10001; display: none; align-items: center; justify-content: center; flex-direction: column; }
         #gal-img { max-width: 85%; max-height: 75vh; border-radius: 10px; }
         
-        /* CONTEXT MENU */
-        #context-menu { position: fixed; background: #1c1f2b; border: 1px solid #444; border-radius: 8px; z-index: 10000; display: none; box-shadow: 0 10px 30px #000; min-width: 180px; }
+        #context-menu { position: fixed; background: #1c1f2b; border: 1px solid #444; border-radius: 8px; z-index: 10000; display: none; min-width: 180px; }
         .menu-item { padding: 10px 15px; font-size: 0.8rem; cursor: pointer; color: #eee; border-bottom: 1px solid #333; }
         .menu-item:hover { background: var(--accent); }
 
         #st-box { margin-top: auto; padding: 15px; background: rgba(255,255,255,0.03); border-radius: 12px; cursor: pointer; }
-        #st-fill { height: 4px; background: var(--accent); width: 0%; margin-top: 8px; transition: 1s; }
+        #st-fill { height: 4px; background: var(--accent); width: 0%; margin-top: 8px; }
         
         .input-bar { padding: 20px; background: #0e1018; display: flex; gap: 10px; border-top: 1px solid #222; }
         #minput { flex: 1; background: #000; border: 1px solid #333; color: #fff; padding: 12px; border-radius: 8px; outline: none; }
-        #sbtn { background: var(--accent); color: white; border: none; padding: 0 20px; border-radius: 8px; font-weight: bold; cursor: pointer; }
-        
-        body.vault-mode { --accent: var(--secret); }
-        body.focus-mode .sidebar, body.focus-mode .input-bar { display: none; }
+        #sbtn { background: var(--accent); color: white; border: none; padding: 0 20px; border-radius: 8px; cursor: pointer; font-weight: bold; }
     </style>
 </head>
 <body onclick="hideMenu()" oncontextmenu="return false;">
@@ -105,7 +93,7 @@
         const db = getFirestore(app);
         const storage = getStorage(app);
 
-        // --- AUTH ---
+        // --- AUTH : LE CODE EST 1704 ---
         const linput = document.getElementById('linput');
         linput.oninput = () => {
             if (linput.value === "1704") {
@@ -114,16 +102,10 @@
                 startSync();
             }
         };
-        if (localStorage.getItem('mando_auth') === 'true') {
-            document.getElementById('lock-screen').style.display = 'none';
-        }
+        if (localStorage.getItem('mando_auth') === 'true') document.getElementById('lock-screen').style.display = 'none';
 
-        window.logout = () => {
-            localStorage.removeItem('mando_auth');
-            location.reload();
-        };
+        window.logout = () => { localStorage.removeItem('mando_auth'); location.reload(); };
 
-        // --- STATE & SYNC ---
         let currentFolder = "genesis";
         let isSecret = false;
         let imagesList = [];
@@ -146,21 +128,19 @@
                         div.className = `bubble ${m.isPinned ? 'pinned' : ''}`;
                         div.oncontextmenu = (e) => openMenu(e, d.id, m);
                         div.innerHTML = `
-                            <div style="font-size:0.55rem; opacity:0.4;">${m.createdAt?.toDate().toLocaleTimeString() || '...'} ${m.isPinned ? '📌' : ''}</div>
+                            <div style="font-size:0.55rem; opacity:0.4;">${m.createdAt?.toDate().toLocaleTimeString() || ''}</div>
                             ${m.text ? `<p style="margin:5px 0 0;">${m.text}</p>` : ''}
-                            ${m.type === 'image' ? `<img src="${m.url}" class="img-preview" onclick="openGal('${m.url}')">` : ''}
+                            ${m.type === 'image' ? `<img src="${m.url}" style="max-width:280px;border-radius:8px;margin-top:8px;cursor:pointer;" onclick="openGal('${m.url}')">` : ''}
                         `;
                         chat.appendChild(div);
                     }
                 });
                 chat.scrollTop = chat.scrollHeight;
-                const perc = (totalSize / 2000000000) * 100;
-                document.getElementById('st-perc').innerText = perc.toFixed(2) + "%";
-                document.getElementById('st-fill').style.width = perc + "%";
+                document.getElementById('st-perc').innerText = ((totalSize / 2000000000) * 100).toFixed(2) + "%";
+                document.getElementById('st-fill').style.width = (totalSize / 2000000000) * 100 + "%";
             });
         }
 
-        // --- GALLERY ---
         window.addEventListener('keydown', (e) => {
             if (document.getElementById('gallery').style.display === 'flex') {
                 if (e.key === "ArrowRight") { currentImgIdx = (currentImgIdx + 1) % imagesList.length; updateGal(); }
@@ -175,36 +155,25 @@
             const t = document.getElementById('gal-thumbs'); t.innerHTML = "";
             imagesList.forEach((u, i) => {
                 const img = document.createElement('img'); img.src = u;
-                img.style = `width:50px; height:50px; object-fit:cover; cursor:pointer; opacity:${i===currentImgIdx?1:0.3}; border:2px solid ${i===currentImgIdx?'var(--accent)':'transparent'}; border-radius:4px; margin-right:5px;`;
+                img.style = `width:50px;height:50px;object-fit:cover;cursor:pointer;opacity:${i===currentImgIdx?1:0.3};border:2px solid ${i===currentImgIdx?'var(--accent)':'transparent'};margin-right:5px;`;
                 img.onclick = (e) => { e.stopPropagation(); currentImgIdx = i; updateGal(); };
                 t.appendChild(img);
             });
         }
 
-        // --- CONTEXT MENU (DELETE FIX) ---
         window.openMenu = (e, id, data) => {
             e.preventDefault();
             const menu = document.getElementById('context-menu');
             menu.style.display = 'block'; menu.style.left = e.pageX + 'px'; menu.style.top = e.pageY + 'px';
-            let moveOptions = folders.filter(f => f !== currentFolder).map(f => `<div class="menu-item" onclick="moveMsg('${id}', '${f}')">➡️ Vers #${f}</div>`).join('');
-            menu.innerHTML = `
-                <div class="menu-item" onclick="pinMsg('${id}', ${!data.isPinned})">📌 ${data.isPinned ? 'Désépingler' : 'Épingler'}</div>
-                <div style="font-size:0.6rem; color:#666; padding:8px 15px 2px;">DÉPLACER</div>
-                ${moveOptions}
-                <div class="menu-item" style="color:#ff4444; border-top:1px solid #333" onclick="delMsg('${id}')">🗑️ Supprimer</div>
-            `;
+            let moveOpts = folders.filter(f => f !== currentFolder).map(f => `<div class="menu-item" onclick="moveMsg('${id}', '${f}')">➡️ #${f}</div>`).join('');
+            menu.innerHTML = `<div class="menu-item" onclick="pinMsg('${id}', ${!data.isPinned})">📌 Épingler</div>${moveOpts}<div class="menu-item" style="color:red;" onclick="delMsg('${id}')">🗑️ Supprimer</div>`;
         };
         window.hideMenu = () => document.getElementById('context-menu').style.display = 'none';
 
-        // --- FIREBASE ACTIONS ---
         window.moveMsg = async (id, target) => { await updateDoc(doc(db, "messages", id), { folder: isSecret ? `secret_${target}` : target }); };
         window.pinMsg = async (id, val) => await updateDoc(doc(db, "messages", id), { isPinned: val });
-        window.delMsg = async (id) => { await deleteDoc(doc(db, "messages", id)); }; // Suppression directe
-        
-        window.setFolder = (el, name) => {
-            document.querySelectorAll('.group-item').forEach(i => i.classList.remove('active'));
-            el.classList.add('active'); currentFolder = name; startSync();
-        };
+        window.delMsg = async (id) => { await deleteDoc(doc(db, "messages", id)); }; // SUPPRESSION DIRECTE
+        window.setFolder = (el, name) => { document.querySelectorAll('.group-item').forEach(i => i.classList.remove('active')); el.classList.add('active'); currentFolder = name; startSync(); };
         window.toggleSecret = () => { isSecret = !isSecret; document.body.classList.toggle('vault-mode', isSecret); startSync(); };
 
         const send = async () => {
