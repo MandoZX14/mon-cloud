@@ -1,6 +1,98 @@
-<script type="module">
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mando Cloud | Dual Edition</title>
+    <style>
+        :root {
+            --accent: #0088cc; --accent-glow: rgba(0, 136, 204, 0.4);
+            --secret: #7000ff; --secret-glow: rgba(112, 0, 255, 0.3);
+            --bg: #0a0b10; --glass: rgba(23, 28, 41, 0.8);
+            --text: #ffffff; --text-dim: #8e9297; --danger: #ff4444;
+        }
+        * { box-sizing: border-box; transition: all 0.2s ease; }
+        body { 
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg); color: var(--text); margin: 0;
+            height: 100vh; display: flex; overflow: hidden;
+        }
+
+        /* VERROUILLAGE */
+        #lock-screen {
+            position: fixed; inset: 0; background: var(--bg); z-index: 9999;
+            display: flex; align-items: center; justify-content: center; backdrop-filter: blur(15px);
+        }
+        .lock-box { background: var(--glass); padding: 40px; border-radius: 24px; border: 1px solid rgba(255,255,255,0.1); text-align: center; }
+        .lock-input { background: rgba(0,0,0,0.3); border: 1px solid var(--accent); color: white; padding: 15px; border-radius: 12px; text-align: center; font-size: 1.5rem; outline: none; width: 220px; margin-top: 20px; }
+
+        /* UI */
+        .sidebar { width: 300px; background: var(--glass); backdrop-filter: blur(20px); border-right: 1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column; padding: 25px; }
+        .main-content { flex: 1; display: flex; flex-direction: column; background: radial-gradient(circle at center, #111420, #0a0b10); }
+        
+        /* BOUTON SECRET INVISIBLE */
+        #logo-btn { 
+            width: 50px; height: 50px; background: var(--accent); border-radius: 12px; 
+            margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; 
+            font-weight: bold; cursor: pointer; user-select: none;
+        }
+        #logo-btn:active { transform: scale(0.9); }
+
+        /* MODE SECRET STYLE */
+        body.vault-mode { --accent: var(--secret); --accent-glow: var(--secret-glow); }
+        body.vault-mode #logo-btn { background: var(--secret); box-shadow: 0 0 20px var(--secret); }
+
+        #chat-container { flex: 1; overflow-y: auto; padding: 30px; display: flex; flex-direction: column; gap: 15px; }
+        .bubble { background: var(--glass); padding: 14px; border-radius: 18px 18px 18px 4px; border: 1px solid rgba(255,255,255,0.1); max-width: 80%; animation: slide 0.3s; }
+        @keyframes slide { from { opacity: 0; transform: translateY(10px); } }
+        
+        .img-preview { max-width: 100%; border-radius: 10px; margin-top: 8px; cursor: pointer; }
+        .stat-card { background: rgba(255,255,255,0.03); padding: 15px; border-radius: 12px; margin-bottom: 10px; border: 1px solid rgba(255,255,255,0.05); }
+        .input-bar { padding: 20px 40px; }
+        .input-wrapper { background: var(--glass); border-radius: 20px; padding: 10px 20px; display: flex; align-items: center; gap: 15px; border: 1px solid var(--accent); }
+        .input-wrapper input { flex: 1; background: transparent; border: none; color: white; outline: none; }
+        
+        #mode-indicator { font-size: 0.7rem; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; color: var(--accent); }
+    </style>
+</head>
+<body>
+
+    <div id="lock-screen">
+        <div class="lock-box">
+            <h2>🔒 Accès Mando Cloud</h2>
+            <input type="password" id="passInput" class="lock-input" placeholder="••••">
+        </div>
+    </div>
+
+    <aside class="sidebar">
+        <div style="text-align: center; margin-bottom: 30px;">
+            <div id="logo-btn">M</div>
+            <div id="mode-indicator">Mode Public</div>
+            <h2 style="margin:0; font-size: 1.1rem;">Mando Cloud</h2>
+        </div>
+
+        <div class="stat-card">
+            <div style="display: flex; justify-content: space-between;"><span>☁️ Stockage</span> <b id="st-text">0%</b></div>
+            <div style="width:100%; height:4px; background:rgba(255,255,255,0.1); margin-top:8px; border-radius:10px;"><div id="st-fill" style="height:100%; background:var(--accent); width:0%;"></div></div>
+        </div>
+        
+        <button onclick="localStorage.removeItem('mando_auth'); location.reload()" style="margin-top:auto; padding:10px; border-radius:8px; border:none; background:rgba(255,0,0,0.1); color:var(--danger); cursor:pointer;">🔒 Quitter</button>
+    </aside>
+
+    <main class="main-content">
+        <div id="chat-container"></div>
+        <div class="input-bar">
+            <div class="input-wrapper">
+                <label style="cursor:pointer;">📎 <input type="file" id="fileInput" hidden></label>
+                <input type="text" id="msgInput" placeholder="Envoyer...">
+                <div id="sendBtn" style="color:var(--accent); cursor:pointer; font-weight:bold;">ENVOYER</div>
+            </div>
+        </div>
+    </main>
+
+    <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, doc, deleteDoc, getDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, doc, deleteDoc, getDoc, where } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
         import { getStorage, ref, uploadBytesResumable, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
 
         const firebaseConfig = {
@@ -16,142 +108,68 @@
         const db = getFirestore(app);
         const storage = getStorage(app);
 
-        // --- SYSTÈME DE VERROUILLAGE AVEC EFFETS ---
-        const SECRET_CODE = "1234"; 
-        const passInput = document.getElementById('passInput');
-        const lockBox = document.querySelector('.lock-box');
-        const lockError = document.getElementById('lock-error');
+        let isVault = false;
+        let unsubscribe = null;
 
-        const checkAuth = () => {
-            if(localStorage.getItem('mando_auth') === 'true') {
-                document.getElementById('lock-screen').style.display = 'none';
-                loadMessages();
+        // --- GESTION DU MODE SECRET ---
+        document.getElementById('logo-btn').onclick = () => {
+            isVault = !isVault;
+            document.body.classList.toggle('vault-mode', isVault);
+            document.getElementById('mode-indicator').innerText = isVault ? "⚠️ Mode Secret" : "Mode Public";
+            loadMessages(); // Recharge uniquement les messages du dossier sélectionné
+        };
+
+        // --- AUTHENTIFICATION ---
+        document.getElementById('passInput').onkeydown = (e) => {
+            if(e.key === 'Enter' && e.target.value === "1234") {
+                localStorage.setItem('mando_auth', 'true');
+                location.reload();
             }
         };
 
-        passInput.addEventListener('keydown', (e) => {
-            if(e.key === 'Enter') {
-                if(passInput.value === SECRET_CODE) {
-                    // EFFET CODE BON ✅
-                    lockBox.style.borderColor = "#00ff88";
-                    lockError.style.color = "#00ff88";
-                    lockError.innerHTML = "ACCÈS AUTORISÉ ✅ <br> Connexion...";
-                    lockError.style.display = "block";
-                    
-                    setTimeout(() => {
-                        localStorage.setItem('mando_auth', 'true');
-                        location.reload();
-                    }, 800);
+        if(localStorage.getItem('mando_auth') === 'true') {
+            document.getElementById('lock-screen').style.display = 'none';
+            loadMessages();
+        }
 
-                } else {
-                    // EFFET CODE FAUX ❌
-                    lockBox.style.animation = "shake 0.4s darkred";
-                    lockBox.style.borderColor = "red";
-                    lockError.innerHTML = "CODE INCORRECT ❌ <br> Réessaye...";
-                    lockError.style.color = "red";
-                    lockError.style.display = "block";
-                    passInput.value = "";
-                    
-                    // On remet la couleur normale après 1 seconde
-                    setTimeout(() => { lockBox.style.borderColor = "rgba(255,255,255,0.1)"; }, 1000);
-                }
-            }
-        });
+        // --- LOGIQUE CLOUD ---
+        function loadMessages() {
+            if (unsubscribe) unsubscribe();
+            // Filtre les messages par le champ "folder"
+            const currentFolder = isVault ? "vault" : "genesis";
+            const q = query(collection(db, "messages"), where("folder", "==", currentFolder), orderBy("createdAt", "asc"));
+            
+            unsubscribe = onSnapshot(q, (snap) => {
+                const cont = document.getElementById('chat-container');
+                cont.innerHTML = "";
+                let totalSize = 0;
 
-        // AJOUT DE L'ANIMATION DE TREMBLEMENT DANS LE HEAD (via JS)
-        const style = document.createElement('style');
-        style.innerHTML = `
-            @keyframes shake {
-                0% { transform: translateX(0); }
-                25% { transform: translateX(-10px); }
-                50% { transform: translateX(10px); }
-                75% { transform: translateX(-10px); }
-                100% { transform: translateX(0); }
-            }
-        `;
-        document.head.appendChild(style);
-
-        // --- RESTE DU CODE (FONCTIONNEMENT CLOUD) ---
-        const loadMessages = () => {
-            const q = query(collection(db, "messages"), orderBy("createdAt", "asc"));
-            onSnapshot(q, (snap) => {
-                const msgs = snap.docs.map(d => ({id: d.id, ...d.data()}));
-                render(msgs);
+                snap.docs.forEach(d => {
+                    const m = d.data();
+                    totalSize += (m.fileSize || 0);
+                    const wrap = document.createElement('div');
+                    wrap.className = 'bubble';
+                    wrap.innerHTML = `
+                        <div style="font-size:0.6rem; color:var(--text-dim); margin-bottom:5px; display:flex; justify-content:space-between;">
+                            <span>${m.createdAt?.toDate().toLocaleTimeString() || '--:--'}</span>
+                            <span onclick="window.del('${d.id}')" style="cursor:pointer; color:var(--danger)">Supprimer</span>
+                        </div>
+                        ${m.text ? `<p style="margin:0">${m.text}</p>` : ''}
+                        ${m.type === 'image' ? `<img src="${m.url}" class="img-preview" onclick="window.open('${m.url}')">` : ''}
+                        ${m.type === 'file' ? `<div style="cursor:pointer" onclick="window.open('${m.url}')">📁 ${m.fileName}</div>` : ''}
+                    `;
+                    cont.appendChild(wrap);
+                });
+                const p = ((totalSize / (5*1024*1024*1024)) * 100).toFixed(2);
+                document.getElementById('st-fill').style.width = p + '%';
+                document.getElementById('st-text').innerText = p + '%';
+                cont.scrollTop = cont.scrollHeight;
             });
-        };
+        }
 
-        const render = (msgs) => {
-            const cont = document.getElementById('chat-container');
-            cont.innerHTML = "";
-            let stats = { img: 0, doc: 0, size: 0 };
-
-            msgs.forEach(m => {
-                if(m.type === 'image') stats.img++; else if(m.type === 'file') stats.doc++;
-                stats.size += (m.fileSize || 0);
-
-                const wrap = document.createElement('div');
-                wrap.className = 'bubble';
-                wrap.style.marginBottom = "10px";
-                wrap.innerHTML = `
-                    <div style="font-size:0.6rem; color:var(--text-dim); margin-bottom:5px; display:flex; justify-content:space-between;">
-                        <span>${m.createdAt?.toDate().toLocaleTimeString() || '--:--'}</span>
-                        <span onclick="window.deleteMsg('${m.id}')" style="cursor:pointer; color:var(--danger)">Supprimer</span>
-                    </div>
-                    ${m.text ? `<p style="margin:0">${m.text}</p>` : ''}
-                    ${m.type === 'image' ? `<img src="${m.url}" class="img-preview" onclick="window.open('${m.url}')">` : ''}
-                    ${m.type === 'file' ? `<div class="file-box" onclick="window.open('${m.url}')">📁 ${m.fileName}</div>` : ''}
-                `;
-                cont.appendChild(wrap);
-            });
-
-            const percent = ((stats.size / (5*1024*1024*1024)) * 100).toFixed(2);
-            document.getElementById('storage-fill').style.width = percent + '%';
-            document.getElementById('storage-text').textContent = percent + '%';
-            document.getElementById('count-img').textContent = stats.img;
-            document.getElementById('count-docs').textContent = stats.doc;
-            cont.scrollTop = cont.scrollHeight;
-        };
-
-        const upload = (file) => {
-            const path = `genesis/${Date.now()}_${file.name}`;
+        async function upload(file) {
+            const folder = isVault ? "vault" : "genesis";
+            const path = `${folder}/${Date.now()}_${file.name}`;
             const task = uploadBytesResumable(ref(storage, path), file);
-            const bar = document.getElementById('upload-progress');
-
-            task.on('state_changed', 
-                (s) => bar.style.width = (s.bytesTransferred/s.totalBytes)*100 + '%',
-                null, 
-                async () => {
-                    const url = await getDownloadURL(task.snapshot.ref);
-                    await addDoc(collection(db, "messages"), {
-                        url, type: file.type.startsWith('image/') ? 'image' : 'file',
-                        fileName: file.name, fileSize: file.size, storagePath: path, createdAt: serverTimestamp()
-                    });
-                    bar.style.width = '0%';
-                }
-            );
-        };
-
-        window.deleteMsg = async (id) => {
-            if(!confirm("Supprimer définitivement de Google Cloud ?")) return;
-            const s = await getDoc(doc(db, "messages", id));
-            if(s.exists() && s.data().storagePath) await deleteObject(ref(storage, s.data().storagePath));
-            await deleteDoc(doc(db, "messages", id));
-        };
-
-        document.getElementById('sendBtn').onclick = async () => {
-            const i = document.getElementById('msgInput');
-            if(!i.value.trim()) return;
-            await addDoc(collection(db, "messages"), { text: i.value, type: 'text', createdAt: serverTimestamp() });
-            i.value = "";
-        };
-
-        document.getElementById('fileInput').onchange = (e) => upload(e.target.files[0]);
-
-        // DRAG & DROP
-        const ov = document.getElementById('dragOverlay');
-        window.ondragover = (e) => { e.preventDefault(); ov.style.display = 'flex'; };
-        window.ondragleave = () => { ov.style.display = 'none'; };
-        window.ondrop = (e) => { e.preventDefault(); ov.style.display = 'none'; upload(e.dataTransfer.files[0]); };
-
-        checkAuth();
-    </script>
+            
+            task.on('state_changed', null, null, async () => {
