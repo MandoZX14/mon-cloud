@@ -3,46 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mando Cloud | Groupe Pro</title>
+    <title>Mando Cloud | Keyboard Fix</title>
     <style>
         :root { --accent: #0088cc; --secret: #7000ff; --bg: #0a0b10; --text: #fff; }
         * { box-sizing: border-box; transition: 0.2s; font-family: 'Segoe UI', sans-serif; }
         body { background: var(--bg); color: var(--text); margin: 0; height: 100vh; display: flex; overflow: hidden; }
         
-        /* GLOW EFFECTS */
         .group-item:hover, #sbtn:hover, #st-box:hover { box-shadow: 0 0 15px var(--accent); cursor: pointer; background: rgba(255,255,255,0.1); }
 
-        /* LOCK SCREEN */
         #lock-screen { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; align-items: center; justify-content: center; }
         .lock-box { padding: 40px; border: 2px solid var(--accent); border-radius: 20px; background: #0e1018; width: 320px; text-align: center; }
         .lock-input { background: #000; border: 1px solid var(--accent); color: #fff; padding: 15px; border-radius: 8px; font-size: 1.5rem; width: 100%; text-align: center; outline: none; letter-spacing: 4px; }
 
-        /* SIDEBAR */
         .sidebar { width: 260px; background: rgba(23, 28, 41, 0.8); border-right: 1px solid #222; padding: 20px; display: flex; flex-direction: column; }
         .group-item { padding: 12px; border-radius: 10px; margin-bottom: 8px; color: #888; border: 1px solid transparent; cursor: pointer; }
         .group-item.active { border-color: var(--accent); background: rgba(0,136,204,0.1); color: #fff; font-weight: bold; }
 
-        /* BUBBLES */
         .main { flex: 1; display: flex; flex-direction: column; }
         #chat { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
-        .bubble { background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px; border-left: 4px solid var(--accent); align-self: flex-start; max-width: 80%; }
+        .bubble { background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px; border-left: 4px solid var(--accent); align-self: flex-start; max-width: 80%; position: relative; }
         .bubble.pinned { border-left-color: gold; background: rgba(255, 215, 0, 0.1); }
         .img-preview { max-width: 280px; border-radius: 8px; margin-top: 8px; cursor: pointer; }
 
-        /* CONTEXT MENU */
         #context-menu { position: fixed; background: #1c1f2b; border: 1px solid #444; border-radius: 8px; z-index: 10000; display: none; box-shadow: 0 10px 30px #000; min-width: 180px; }
         .menu-item { padding: 10px 15px; font-size: 0.8rem; cursor: pointer; color: #eee; border-bottom: 1px solid #333; }
-        .menu-item:last-child { border: none; }
         .menu-item:hover { background: var(--accent); color: #fff; }
         .submenu-title { font-size: 0.65rem; color: #666; padding: 8px 15px 2px; text-transform: uppercase; font-weight: bold; }
 
-        /* GALLERY & STORAGE */
         #gallery { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 10001; display: none; align-items: center; justify-content: center; flex-direction: column; }
-        #gal-img { max-width: 85%; max-height: 75vh; }
+        #gal-img { max-width: 85%; max-height: 75vh; border-radius: 10px; }
+        
         #st-box { margin-top: auto; padding: 15px; background: rgba(255,255,255,0.03); border-radius: 12px; }
         #st-fill { height: 4px; background: var(--accent); width: 0%; margin-top: 8px; transition: 1s; }
         .input-bar { padding: 20px; background: #0e1018; display: flex; gap: 10px; border-top: 1px solid #222; }
         #minput { flex: 1; background: #000; border: 1px solid #333; color: #fff; padding: 12px; border-radius: 8px; outline: none; }
+        
+        body.vault-mode { --accent: var(--secret); }
+        body.focus-mode .sidebar, body.focus-mode .input-bar { display: none; }
     </style>
 </head>
 <body onclick="hideMenu()" oncontextmenu="return false;">
@@ -57,6 +54,7 @@
     <div id="gallery" onclick="this.style.display='none'">
         <img id="gal-img" src="">
         <div id="gal-thumbs" onclick="event.stopPropagation()" style="display:flex; gap:8px; margin-top:15px; overflow-x:auto; max-width:90%;"></div>
+        <p style="color: #555; font-size: 0.8rem; margin-top: 10px;">Utilise ← → et ESC</p>
     </div>
 
     <div id="context-menu"></div>
@@ -101,7 +99,7 @@
         const db = getFirestore(app);
         const storage = getStorage(app);
 
-        // --- AUTH 1704 ---
+        // --- AUTH ---
         document.getElementById('linput').addEventListener('input', (e) => {
             if(e.target.value === "1704") { localStorage.setItem('mando_logged', 'true'); location.reload(); }
         });
@@ -114,6 +112,28 @@
         let currentImgIdx = 0;
         let unsubscribe = null;
         const folders = ['genesis', 'projets', 'photos', 'archives'];
+
+        // --- NAVIGATION CLAVIER (FIXED) ---
+        window.addEventListener('keydown', (e) => {
+            // Mode Focus
+            if(e.key.toLowerCase() === 'f') {
+                document.body.classList.toggle('focus-mode');
+            }
+            // Navigation Galerie
+            if(document.getElementById('gallery').style.display === 'flex') {
+                if(e.key === "ArrowRight") {
+                    currentImgIdx = (currentImgIdx + 1) % imagesList.length;
+                    updateGal();
+                }
+                if(e.key === "ArrowLeft") {
+                    currentImgIdx = (currentImgIdx - 1 + imagesList.length) % imagesList.length;
+                    updateGal();
+                }
+                if(e.key === "Escape") {
+                    document.getElementById('gallery').style.display = 'none';
+                }
+            }
+        });
 
         // --- SYNC ---
         function startSync() {
@@ -132,7 +152,7 @@
                         div.oncontextmenu = (e) => openMenu(e, d.id, m);
                         div.innerHTML = `
                             <div style="font-size:0.55rem; opacity:0.4;">${m.createdAt?.toDate().toLocaleTimeString() || '...'}</div>
-                            ${m.text ? `<p style="margin:5px 0 0;">${m.text.replace(/https?:\/\/[^\s]+/g, '<a href="$&" target="_blank">$&</a>')}</p>` : ''}
+                            ${m.text ? `<p style="margin:5px 0 0;">${m.text}</p>` : ''}
                             ${m.type === 'image' ? `<img src="${m.url}" class="img-preview" onclick="openGal('${m.url}')">` : ''}
                         `;
                         chat.appendChild(div);
@@ -145,68 +165,26 @@
             });
         }
 
-        // --- CONTEXT MENU AVEC GROUPES ---
-        window.openMenu = (e, id, data) => {
-            e.preventDefault();
-            const menu = document.getElementById('context-menu');
-            menu.style.display = 'block'; menu.style.left = e.pageX + 'px'; menu.style.top = e.pageY + 'px';
-            
-            let moveOptions = folders.filter(f => f !== currentFolder).map(f => 
-                `<div class="menu-item" onclick="moveMsg('${id}', '${f}')">➡️ Vers #${f}</div>`
-            ).join('');
-
-            menu.innerHTML = `
-                <div class="menu-item" onclick="pinMsg('${id}', ${!data.isPinned})">📌 ${data.isPinned ? 'Désépingler' : 'Épingler'}</div>
-                <div class="submenu-title">Déplacer le message</div>
-                ${moveOptions}
-                <div class="menu-item" style="color:#ff4444; border-top:1px solid #333" onclick="delMsg('${id}')">🗑️ Supprimer</div>
-            `;
+        // --- GALERIE ---
+        window.openGal = (url) => {
+            currentImgIdx = imagesList.indexOf(url);
+            updateGal();
+            document.getElementById('gallery').style.display = 'flex';
         };
-        window.hideMenu = () => document.getElementById('context-menu').style.display = 'none';
-
-        // --- ACTIONS ---
-        window.moveMsg = async (id, target) => {
-            const finalTarget = isSecret ? `secret_${target}` : target;
-            await updateDoc(doc(db, "messages", id), { folder: finalTarget });
-        };
-        window.pinMsg = async (id, val) => await updateDoc(doc(db, "messages", id), { isPinned: val });
-        window.delMsg = async (id) => { if(confirm("Supprimer ?")) await deleteDoc(doc(db, "messages", id)); };
-        window.setFolder = (el, name) => {
-            document.querySelectorAll('.group-item').forEach(i => i.classList.remove('active'));
-            el.classList.add('active'); currentFolder = name; startSync();
-        };
-        window.toggleSecret = () => { isSecret = !isSecret; document.body.classList.toggle('vault-mode', isSecret); startSync(); };
-
-        // --- ENVOI & GALERIE ---
-        const send = async () => {
-            const inp = document.getElementById('minput'); if(!inp.value.trim()) return;
-            await addDoc(collection(db, "messages"), { text: inp.value, folder: isSecret ? `secret_${currentFolder}` : currentFolder, createdAt: serverTimestamp(), isPinned: false, type: 'text' });
-            inp.value = "";
-        };
-        document.getElementById('sbtn').onclick = send;
-        document.getElementById('minput').onkeydown = (e) => { if(e.key === 'Enter') send(); };
-
-        window.openGal = (url) => { currentImgIdx = imagesList.indexOf(url); updateGal(); document.getElementById('gallery').style.display = 'flex'; };
         function updateGal() {
             document.getElementById('gal-img').src = imagesList[currentImgIdx];
             const t = document.getElementById('gal-thumbs'); t.innerHTML = "";
             imagesList.forEach((u, i) => {
-                const img = document.createElement('img'); img.src = u; img.style = `width:50px; height:50px; object-fit:cover; cursor:pointer; opacity:${i===currentImgIdx?1:0.3}; border:2px solid ${i===currentImgIdx?'var(--accent)':'transparent'}`;
-                img.onclick = (e) => { e.stopPropagation(); currentImgIdx = i; updateGal(); }; t.appendChild(img);
+                const img = document.createElement('img');
+                img.src = u;
+                img.style = `width:50px; height:50px; object-fit:cover; cursor:pointer; opacity:${i===currentImgIdx?1:0.3}; border:2px solid ${i===currentImgIdx?'var(--accent)':'transparent'}; border-radius:4px;`;
+                img.onclick = (e) => { e.stopPropagation(); currentImgIdx = i; updateGal(); };
+                t.appendChild(img);
             });
         }
 
-        document.getElementById('fup').onchange = async (e) => {
-            const file = e.target.files[0]; if(!file) return;
-            const path = isSecret ? `secret_${currentFolder}` : currentFolder;
-            const task = uploadBytesResumable(ref(storage, `${path}/${Date.now()}_${file.name}`), file);
-            task.on('state_changed', null, null, async () => {
-                const url = await getDownloadURL(task.snapshot.ref);
-                await addDoc(collection(db, "messages"), { url, type: file.type.startsWith('image/') ? 'image' : 'file', fileName: file.name, fileSize: file.size, folder: path, createdAt: serverTimestamp(), isPinned: false });
-            });
-        };
-
-        startSync();
-    </script>
-</body>
-</html>
+        // --- CONTEXT MENU ---
+        window.openMenu = (e, id, data) => {
+            e.preventDefault();
+            const menu = document.getElementById('context-menu');
+            menu.style.display = 'block
