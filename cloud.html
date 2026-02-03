@@ -1,69 +1,157 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mando Cloud | Genesis Edition</title>
-    <style>
-        :root {
-            --accent: #0088cc; --accent-glow: rgba(0, 136, 204, 0.4);
-            --bg: #0a0b10; --glass: rgba(23, 28, 41, 0.8);
-            --text: #ffffff; --text-dim: #8e9297; --danger: #ff4444;
-        }
-        * { box-sizing: border-box; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
-        body { 
-            font-family: 'Segoe UI', system-ui, sans-serif;
-            background: var(--bg); color: var(--text); margin: 0;
-            height: 100vh; display: flex; overflow: hidden;
-            background-image: radial-gradient(circle at top right, #1a1c2c, transparent), radial-gradient(circle at bottom left, #0d1117, transparent);
-        }
+<script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, doc, deleteDoc, getDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+        import { getStorage, ref, uploadBytesResumable, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
 
-        /* ÉCRAN DE VERROUILLAGE */
-        #lock-screen {
-            position: fixed; inset: 0; background: var(--bg); z-index: 9999;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            backdrop-filter: blur(15px);
-        }
-        .lock-box { background: var(--glass); padding: 40px; border-radius: 24px; border: 1px solid rgba(255,255,255,0.1); text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
-        .lock-input { 
-            background: rgba(0,0,0,0.3); border: 1px solid var(--accent); color: white;
-            padding: 15px; border-radius: 12px; text-align: center; font-size: 1.5rem; 
-            outline: none; width: 200px; letter-spacing: 5px; margin-top: 20px;
-        }
+        const firebaseConfig = {
+            apiKey: "AIzaSyC4_4agQc-TefAeZNgTZvQMkCg7VUzq4ko",
+            authDomain: "door-52b7f.firebaseapp.com",
+            projectId: "door-52b7f",
+            storageBucket: "door-52b7f.firebasestorage.app",
+            messagingSenderId: "225584391077",
+            appId: "1:225584391077:web:8bf224eedc0b42a5e13e4c"
+        };
 
-        /* UI PRINCIPALE */
-        #upload-progress { position: fixed; top: 0; left: 0; height: 4px; background: var(--accent); width: 0%; z-index: 2000; box-shadow: 0 0 10px var(--accent); }
-        .sidebar { width: 300px; background: var(--glass); backdrop-filter: blur(20px); border-right: 1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column; padding: 25px; z-index: 10; }
-        .storage-bar { width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 10px; margin-top: 10px; overflow: hidden; }
-        #storage-fill { height: 100%; background: var(--accent); width: 0%; transition: width 0.5s; }
-        .stat-card { background: rgba(255,255,255,0.03); padding: 15px; border-radius: 12px; margin-bottom: 10px; border: 1px solid rgba(255,255,255,0.05); font-size: 0.9rem; }
-        
-        #chat-container { flex: 1; overflow-y: auto; padding: 30px; display: flex; flex-direction: column; gap: 15px; scroll-behavior: smooth; }
-        .bubble { background: var(--glass); padding: 14px; border-radius: 18px 18px 18px 4px; border: 1px solid rgba(255,255,255,0.1); max-width: 80%; animation: slideUp 0.3s ease; }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        
-        .img-preview { max-width: 100%; border-radius: 10px; margin-top: 8px; cursor: pointer; border: 1px solid rgba(255,255,255,0.1); }
-        .file-box { background: rgba(0,0,0,0.2); border-radius: 8px; padding: 10px; display: flex; align-items: center; gap: 10px; margin-top: 5px; cursor: pointer; }
-        
-        .input-bar { padding: 20px 40px; }
-        .input-wrapper { background: var(--glass); border-radius: 20px; padding: 10px 20px; display: flex; align-items: center; gap: 15px; border: 1px solid rgba(255,255,255,0.1); }
-        .input-wrapper input { flex: 1; background: transparent; border: none; color: white; outline: none; }
-        .drag-overlay { position: fixed; inset: 0; background: var(--accent-glow); backdrop-filter: blur(5px); display: none; align-items: center; justify-content: center; z-index: 1000; border: 4px dashed var(--accent); pointer-events: none; }
-    </style>
-</head>
-<body>
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const storage = getStorage(app);
 
-    <div id="lock-screen">
-        <div class="lock-box">
-            <h2>🔒 Accès Mando Cloud</h2>
-            <input type="password" id="passInput" class="lock-input" placeholder="••••">
-            <p id="lock-error" style="color: var(--danger); margin-top: 15px; display: none; font-size: 0.8rem;">Code incorrect</p>
-        </div>
-    </div>
+        // --- SYSTÈME DE VERROUILLAGE AVEC EFFETS ---
+        const SECRET_CODE = "1234"; 
+        const passInput = document.getElementById('passInput');
+        const lockBox = document.querySelector('.lock-box');
+        const lockError = document.getElementById('lock-error');
 
-    <div id="upload-progress"></div>
-    <div class="drag-overlay" id="dragOverlay"><h1>LÂCHEZ POUR ENVOYER 🚀</h1></div>
+        const checkAuth = () => {
+            if(localStorage.getItem('mando_auth') === 'true') {
+                document.getElementById('lock-screen').style.display = 'none';
+                loadMessages();
+            }
+        };
 
-    <aside class="sidebar">
-        <div style="text-align: center; margin-bottom: 30px;">
-            <div style
+        passInput.addEventListener('keydown', (e) => {
+            if(e.key === 'Enter') {
+                if(passInput.value === SECRET_CODE) {
+                    // EFFET CODE BON ✅
+                    lockBox.style.borderColor = "#00ff88";
+                    lockError.style.color = "#00ff88";
+                    lockError.innerHTML = "ACCÈS AUTORISÉ ✅ <br> Connexion...";
+                    lockError.style.display = "block";
+                    
+                    setTimeout(() => {
+                        localStorage.setItem('mando_auth', 'true');
+                        location.reload();
+                    }, 800);
+
+                } else {
+                    // EFFET CODE FAUX ❌
+                    lockBox.style.animation = "shake 0.4s darkred";
+                    lockBox.style.borderColor = "red";
+                    lockError.innerHTML = "CODE INCORRECT ❌ <br> Réessaye...";
+                    lockError.style.color = "red";
+                    lockError.style.display = "block";
+                    passInput.value = "";
+                    
+                    // On remet la couleur normale après 1 seconde
+                    setTimeout(() => { lockBox.style.borderColor = "rgba(255,255,255,0.1)"; }, 1000);
+                }
+            }
+        });
+
+        // AJOUT DE L'ANIMATION DE TREMBLEMENT DANS LE HEAD (via JS)
+        const style = document.createElement('style');
+        style.innerHTML = `
+            @keyframes shake {
+                0% { transform: translateX(0); }
+                25% { transform: translateX(-10px); }
+                50% { transform: translateX(10px); }
+                75% { transform: translateX(-10px); }
+                100% { transform: translateX(0); }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // --- RESTE DU CODE (FONCTIONNEMENT CLOUD) ---
+        const loadMessages = () => {
+            const q = query(collection(db, "messages"), orderBy("createdAt", "asc"));
+            onSnapshot(q, (snap) => {
+                const msgs = snap.docs.map(d => ({id: d.id, ...d.data()}));
+                render(msgs);
+            });
+        };
+
+        const render = (msgs) => {
+            const cont = document.getElementById('chat-container');
+            cont.innerHTML = "";
+            let stats = { img: 0, doc: 0, size: 0 };
+
+            msgs.forEach(m => {
+                if(m.type === 'image') stats.img++; else if(m.type === 'file') stats.doc++;
+                stats.size += (m.fileSize || 0);
+
+                const wrap = document.createElement('div');
+                wrap.className = 'bubble';
+                wrap.style.marginBottom = "10px";
+                wrap.innerHTML = `
+                    <div style="font-size:0.6rem; color:var(--text-dim); margin-bottom:5px; display:flex; justify-content:space-between;">
+                        <span>${m.createdAt?.toDate().toLocaleTimeString() || '--:--'}</span>
+                        <span onclick="window.deleteMsg('${m.id}')" style="cursor:pointer; color:var(--danger)">Supprimer</span>
+                    </div>
+                    ${m.text ? `<p style="margin:0">${m.text}</p>` : ''}
+                    ${m.type === 'image' ? `<img src="${m.url}" class="img-preview" onclick="window.open('${m.url}')">` : ''}
+                    ${m.type === 'file' ? `<div class="file-box" onclick="window.open('${m.url}')">📁 ${m.fileName}</div>` : ''}
+                `;
+                cont.appendChild(wrap);
+            });
+
+            const percent = ((stats.size / (5*1024*1024*1024)) * 100).toFixed(2);
+            document.getElementById('storage-fill').style.width = percent + '%';
+            document.getElementById('storage-text').textContent = percent + '%';
+            document.getElementById('count-img').textContent = stats.img;
+            document.getElementById('count-docs').textContent = stats.doc;
+            cont.scrollTop = cont.scrollHeight;
+        };
+
+        const upload = (file) => {
+            const path = `genesis/${Date.now()}_${file.name}`;
+            const task = uploadBytesResumable(ref(storage, path), file);
+            const bar = document.getElementById('upload-progress');
+
+            task.on('state_changed', 
+                (s) => bar.style.width = (s.bytesTransferred/s.totalBytes)*100 + '%',
+                null, 
+                async () => {
+                    const url = await getDownloadURL(task.snapshot.ref);
+                    await addDoc(collection(db, "messages"), {
+                        url, type: file.type.startsWith('image/') ? 'image' : 'file',
+                        fileName: file.name, fileSize: file.size, storagePath: path, createdAt: serverTimestamp()
+                    });
+                    bar.style.width = '0%';
+                }
+            );
+        };
+
+        window.deleteMsg = async (id) => {
+            if(!confirm("Supprimer définitivement de Google Cloud ?")) return;
+            const s = await getDoc(doc(db, "messages", id));
+            if(s.exists() && s.data().storagePath) await deleteObject(ref(storage, s.data().storagePath));
+            await deleteDoc(doc(db, "messages", id));
+        };
+
+        document.getElementById('sendBtn').onclick = async () => {
+            const i = document.getElementById('msgInput');
+            if(!i.value.trim()) return;
+            await addDoc(collection(db, "messages"), { text: i.value, type: 'text', createdAt: serverTimestamp() });
+            i.value = "";
+        };
+
+        document.getElementById('fileInput').onchange = (e) => upload(e.target.files[0]);
+
+        // DRAG & DROP
+        const ov = document.getElementById('dragOverlay');
+        window.ondragover = (e) => { e.preventDefault(); ov.style.display = 'flex'; };
+        window.ondragleave = () => { ov.style.display = 'none'; };
+        window.ondrop = (e) => { e.preventDefault(); ov.style.display = 'none'; upload(e.dataTransfer.files[0]); };
+
+        checkAuth();
+    </script>
