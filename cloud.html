@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mando Cloud | Navigation Pro</title>
+    <title>Mando Cloud | Groupe Pro</title>
     <style>
         :root { --accent: #0088cc; --secret: #7000ff; --bg: #0a0b10; --text: #fff; }
         * { box-sizing: border-box; transition: 0.2s; font-family: 'Segoe UI', sans-serif; }
         body { background: var(--bg); color: var(--text); margin: 0; height: 100vh; display: flex; overflow: hidden; }
         
-        /* EFFETS GLOW */
+        /* GLOW EFFECTS */
         .group-item:hover, #sbtn:hover, #st-box:hover { box-shadow: 0 0 15px var(--accent); cursor: pointer; background: rgba(255,255,255,0.1); }
 
         /* LOCK SCREEN */
@@ -22,33 +22,30 @@
         .group-item { padding: 12px; border-radius: 10px; margin-bottom: 8px; color: #888; border: 1px solid transparent; cursor: pointer; }
         .group-item.active { border-color: var(--accent); background: rgba(0,136,204,0.1); color: #fff; font-weight: bold; }
 
-        /* CHAT */
+        /* BUBBLES */
         .main { flex: 1; display: flex; flex-direction: column; }
         #chat { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
         .bubble { background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px; border-left: 4px solid var(--accent); align-self: flex-start; max-width: 80%; }
-        .img-preview { max-width: 280px; border-radius: 8px; margin-top: 8px; cursor: pointer; border: 1px solid transparent; }
-        .img-preview:hover { border-color: var(--accent); }
+        .bubble.pinned { border-left-color: gold; background: rgba(255, 215, 0, 0.1); }
+        .img-preview { max-width: 280px; border-radius: 8px; margin-top: 8px; cursor: pointer; }
 
-        /* GALERIE AVANCÉE */
-        #gallery { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 10000; display: none; align-items: center; justify-content: center; flex-direction: column; }
-        #gal-img { max-width: 85%; max-height: 75vh; border-radius: 10px; box-shadow: 0 0 30px #000; }
-        #gal-thumbs { display: flex; gap: 10px; margin-top: 20px; overflow-x: auto; max-width: 90%; padding: 10px; }
-        .thumb { width: 60px; height: 60px; object-fit: cover; opacity: 0.3; cursor: pointer; border-radius: 5px; border: 2px solid transparent; }
-        .thumb.active { opacity: 1; border-color: var(--accent); }
+        /* CONTEXT MENU */
+        #context-menu { position: fixed; background: #1c1f2b; border: 1px solid #444; border-radius: 8px; z-index: 10000; display: none; box-shadow: 0 10px 30px #000; min-width: 180px; }
+        .menu-item { padding: 10px 15px; font-size: 0.8rem; cursor: pointer; color: #eee; border-bottom: 1px solid #333; }
+        .menu-item:last-child { border: none; }
+        .menu-item:hover { background: var(--accent); color: #fff; }
+        .submenu-title { font-size: 0.65rem; color: #666; padding: 8px 15px 2px; text-transform: uppercase; font-weight: bold; }
 
-        /* INPUT */
-        .input-bar { padding: 20px; background: #0e1018; display: flex; gap: 10px; border-top: 1px solid #222; }
-        #minput { flex: 1; background: #000; border: 1px solid #333; color: #fff; padding: 12px; border-radius: 8px; outline: none; }
-        #sbtn { background: var(--accent); color: white; border: none; padding: 0 20px; border-radius: 8px; cursor: pointer; font-weight: bold; }
-
-        /* MODES */
-        body.vault-mode { --accent: var(--secret); }
-        body.focus-mode .sidebar, body.focus-mode .input-bar { display: none; }
+        /* GALLERY & STORAGE */
+        #gallery { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 10001; display: none; align-items: center; justify-content: center; flex-direction: column; }
+        #gal-img { max-width: 85%; max-height: 75vh; }
         #st-box { margin-top: auto; padding: 15px; background: rgba(255,255,255,0.03); border-radius: 12px; }
         #st-fill { height: 4px; background: var(--accent); width: 0%; margin-top: 8px; transition: 1s; }
+        .input-bar { padding: 20px; background: #0e1018; display: flex; gap: 10px; border-top: 1px solid #222; }
+        #minput { flex: 1; background: #000; border: 1px solid #333; color: #fff; padding: 12px; border-radius: 8px; outline: none; }
     </style>
 </head>
-<body oncontextmenu="return false;">
+<body onclick="hideMenu()" oncontextmenu="return false;">
 
     <div id="lock-screen">
         <div class="lock-box">
@@ -59,14 +56,16 @@
 
     <div id="gallery" onclick="this.style.display='none'">
         <img id="gal-img" src="">
-        <div id="gal-thumbs" onclick="event.stopPropagation()"></div>
-        <p style="color:#555; font-size:0.8rem; margin-top:10px;">Flèches ← → pour naviguer • ESC pour fermer</p>
+        <div id="gal-thumbs" onclick="event.stopPropagation()" style="display:flex; gap:8px; margin-top:15px; overflow-x:auto; max-width:90%;"></div>
     </div>
+
+    <div id="context-menu"></div>
 
     <aside class="sidebar">
         <h3 style="color:var(--accent)">MANDO.</h3>
         <div class="group-item active" onclick="setFolder(this, 'genesis')"># Général</div>
         <div class="group-item" onclick="setFolder(this, 'projets')"># Projets</div>
+        <div class="group-item" onclick="setFolder(this, 'photos')"># Photos</div>
         <div class="group-item" onclick="setFolder(this, 'archives')"># Archives</div>
         
         <div id="st-box" onclick="toggleSecret()">
@@ -76,21 +75,21 @@
             </div>
             <div style="background:#222; height:4px;"><div id="st-fill"></div></div>
         </div>
-        <button onclick="localStorage.clear(); location.reload();" style="background:none; border:none; color:#444; cursor:pointer; margin-top:10px; text-align:left;">Déconnexion</button>
+        <button onclick="localStorage.clear(); location.reload();" style="background:none; border:none; color:#444; cursor:pointer; margin-top:10px; text-align:left; font-size:0.75rem;">Déconnexion</button>
     </aside>
 
     <main class="main">
         <div id="chat"></div>
         <div class="input-bar">
             <label style="cursor:pointer; font-size:1.5rem;">📎<input type="file" id="fup" hidden></label>
-            <input type="text" id="minput" placeholder="Écrire ici...">
-            <button id="sbtn">OK</button>
+            <input type="text" id="minput" placeholder="Message...">
+            <button id="sbtn" style="background:var(--accent); color:white; border:none; padding:0 20px; border-radius:8px; font-weight:bold; cursor:pointer;">OK</button>
         </div>
     </main>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, doc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
         import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
 
         const firebaseConfig = {
@@ -98,17 +97,13 @@
             projectId: "door-52b7f", storageBucket: "door-52b7f.firebasestorage.app",
             messagingSenderId: "225584391077", appId: "1:225584391077:web:8bf224eedc0b42a5e13e4c"
         };
-
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const storage = getStorage(app);
 
-        // --- AUTH ---
+        // --- AUTH 1704 ---
         document.getElementById('linput').addEventListener('input', (e) => {
-            if(e.target.value === "1704") {
-                localStorage.setItem('mando_logged', 'true');
-                location.reload();
-            }
+            if(e.target.value === "1704") { localStorage.setItem('mando_logged', 'true'); location.reload(); }
         });
         if(localStorage.getItem('mando_logged') === 'true') document.getElementById('lock-screen').style.display = 'none';
 
@@ -118,57 +113,25 @@
         let imagesList = [];
         let currentImgIdx = 0;
         let unsubscribe = null;
-
-        // --- NAVIGATION IMAGE ---
-        window.openGal = (url) => {
-            currentImgIdx = imagesList.indexOf(url);
-            updateGalUI();
-            document.getElementById('gallery').style.display = 'flex';
-        };
-
-        function updateGalUI() {
-            document.getElementById('gal-img').src = imagesList[currentImgIdx];
-            const thumbs = document.getElementById('gal-thumbs');
-            thumbs.innerHTML = "";
-            imagesList.forEach((src, idx) => {
-                const img = document.createElement('img');
-                img.src = src;
-                img.className = `thumb ${idx === currentImgIdx ? 'active' : ''}`;
-                img.onclick = (e) => { e.stopPropagation(); currentImgIdx = idx; updateGalUI(); };
-                thumbs.appendChild(img);
-            });
-        }
-
-        window.addEventListener('keydown', (e) => {
-            if(e.key.toLowerCase() === 'f') document.body.classList.toggle('focus-mode');
-            if(document.getElementById('gallery').style.display === 'flex') {
-                if(e.key === "ArrowRight") { currentImgIdx = (currentImgIdx + 1) % imagesList.length; updateGalUI(); }
-                if(e.key === "ArrowLeft") { currentImgIdx = (currentImgIdx - 1 + imagesList.length) % imagesList.length; updateGalUI(); }
-                if(e.key === "Escape") document.getElementById('gallery').style.display = 'none';
-            }
-        });
+        const folders = ['genesis', 'projets', 'photos', 'archives'];
 
         // --- SYNC ---
         function startSync() {
             if(unsubscribe) unsubscribe();
             const folderPath = isSecret ? `secret_${currentFolder}` : currentFolder;
-            
             unsubscribe = onSnapshot(query(collection(db, "messages"), orderBy("createdAt", "asc")), (snap) => {
-                const chat = document.getElementById('chat');
-                chat.innerHTML = "";
-                imagesList = [];
+                const chat = document.getElementById('chat'); chat.innerHTML = ""; imagesList = [];
                 let totalSize = 0;
-
-                snap.forEach(doc => {
-                    const m = doc.data();
+                snap.forEach(d => {
+                    const m = d.data();
                     if(m.folder === folderPath) {
                         totalSize += (m.fileSize || 0);
                         if(m.type === 'image') imagesList.push(m.url);
-                        
                         const div = document.createElement('div');
-                        div.className = "bubble";
+                        div.className = `bubble ${m.isPinned ? 'pinned' : ''}`;
+                        div.oncontextmenu = (e) => openMenu(e, d.id, m);
                         div.innerHTML = `
-                            <div style="font-size:0.6rem; opacity:0.5;">${m.createdAt?.toDate().toLocaleTimeString() || '...'}</div>
+                            <div style="font-size:0.55rem; opacity:0.4;">${m.createdAt?.toDate().toLocaleTimeString() || '...'}</div>
                             ${m.text ? `<p style="margin:5px 0 0;">${m.text.replace(/https?:\/\/[^\s]+/g, '<a href="$&" target="_blank">$&</a>')}</p>` : ''}
                             ${m.type === 'image' ? `<img src="${m.url}" class="img-preview" onclick="openGal('${m.url}')">` : ''}
                         `;
@@ -176,53 +139,70 @@
                     }
                 });
                 chat.scrollTop = chat.scrollHeight;
-                const perc = (totalSize / 2000000000) * 100;
-                document.getElementById('st-perc').innerText = perc.toFixed(2) + "%";
-                document.getElementById('st-fill').style.width = perc + "%";
+                const p = (totalSize / 2000000000) * 100;
+                document.getElementById('st-perc').innerText = p.toFixed(2) + "%";
+                document.getElementById('st-fill').style.width = p + "%";
             });
         }
 
+        // --- CONTEXT MENU AVEC GROUPES ---
+        window.openMenu = (e, id, data) => {
+            e.preventDefault();
+            const menu = document.getElementById('context-menu');
+            menu.style.display = 'block'; menu.style.left = e.pageX + 'px'; menu.style.top = e.pageY + 'px';
+            
+            let moveOptions = folders.filter(f => f !== currentFolder).map(f => 
+                `<div class="menu-item" onclick="moveMsg('${id}', '${f}')">➡️ Vers #${f}</div>`
+            ).join('');
+
+            menu.innerHTML = `
+                <div class="menu-item" onclick="pinMsg('${id}', ${!data.isPinned})">📌 ${data.isPinned ? 'Désépingler' : 'Épingler'}</div>
+                <div class="submenu-title">Déplacer le message</div>
+                ${moveOptions}
+                <div class="menu-item" style="color:#ff4444; border-top:1px solid #333" onclick="delMsg('${id}')">🗑️ Supprimer</div>
+            `;
+        };
+        window.hideMenu = () => document.getElementById('context-menu').style.display = 'none';
+
         // --- ACTIONS ---
+        window.moveMsg = async (id, target) => {
+            const finalTarget = isSecret ? `secret_${target}` : target;
+            await updateDoc(doc(db, "messages", id), { folder: finalTarget });
+        };
+        window.pinMsg = async (id, val) => await updateDoc(doc(db, "messages", id), { isPinned: val });
+        window.delMsg = async (id) => { if(confirm("Supprimer ?")) await deleteDoc(doc(db, "messages", id)); };
         window.setFolder = (el, name) => {
             document.querySelectorAll('.group-item').forEach(i => i.classList.remove('active'));
-            el.classList.add('active');
-            currentFolder = name;
-            startSync();
+            el.classList.add('active'); currentFolder = name; startSync();
         };
+        window.toggleSecret = () => { isSecret = !isSecret; document.body.classList.toggle('vault-mode', isSecret); startSync(); };
 
-        window.toggleSecret = () => {
-            isSecret = !isSecret;
-            document.body.classList.toggle('vault-mode', isSecret);
-            startSync();
-        };
-
+        // --- ENVOI & GALERIE ---
         const send = async () => {
-            const inp = document.getElementById('minput');
-            if(!inp.value.trim()) return;
-            await addDoc(collection(db, "messages"), { 
-                text: inp.value, 
-                folder: isSecret ? `secret_${currentFolder}` : currentFolder, 
-                createdAt: serverTimestamp(), 
-                type: 'text' 
-            });
+            const inp = document.getElementById('minput'); if(!inp.value.trim()) return;
+            await addDoc(collection(db, "messages"), { text: inp.value, folder: isSecret ? `secret_${currentFolder}` : currentFolder, createdAt: serverTimestamp(), isPinned: false, type: 'text' });
             inp.value = "";
         };
-
         document.getElementById('sbtn').onclick = send;
         document.getElementById('minput').onkeydown = (e) => { if(e.key === 'Enter') send(); };
 
+        window.openGal = (url) => { currentImgIdx = imagesList.indexOf(url); updateGal(); document.getElementById('gallery').style.display = 'flex'; };
+        function updateGal() {
+            document.getElementById('gal-img').src = imagesList[currentImgIdx];
+            const t = document.getElementById('gal-thumbs'); t.innerHTML = "";
+            imagesList.forEach((u, i) => {
+                const img = document.createElement('img'); img.src = u; img.style = `width:50px; height:50px; object-fit:cover; cursor:pointer; opacity:${i===currentImgIdx?1:0.3}; border:2px solid ${i===currentImgIdx?'var(--accent)':'transparent'}`;
+                img.onclick = (e) => { e.stopPropagation(); currentImgIdx = i; updateGal(); }; t.appendChild(img);
+            });
+        }
+
         document.getElementById('fup').onchange = async (e) => {
-            const file = e.target.files[0];
-            if(!file) return;
+            const file = e.target.files[0]; if(!file) return;
             const path = isSecret ? `secret_${currentFolder}` : currentFolder;
-            const sRef = ref(storage, `${path}/${Date.now()}_${file.name}`);
-            const task = uploadBytesResumable(sRef, file);
+            const task = uploadBytesResumable(ref(storage, `${path}/${Date.now()}_${file.name}`), file);
             task.on('state_changed', null, null, async () => {
                 const url = await getDownloadURL(task.snapshot.ref);
-                await addDoc(collection(db, "messages"), { 
-                    url, type: file.type.startsWith('image/') ? 'image' : 'file', 
-                    fileName: file.name, fileSize: file.size, folder: path, createdAt: serverTimestamp() 
-                });
+                await addDoc(collection(db, "messages"), { url, type: file.type.startsWith('image/') ? 'image' : 'file', fileName: file.name, fileSize: file.size, folder: path, createdAt: serverTimestamp(), isPinned: false });
             });
         };
 
