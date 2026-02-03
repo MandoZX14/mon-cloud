@@ -10,7 +10,6 @@
             --bg: #0a0b10; --glass: rgba(23, 28, 41, 0.8);
             --text: #ffffff; --text-dim: #8e9297;
         }
-        
         * { box-sizing: border-box; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
         body { 
             font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
@@ -18,8 +17,6 @@
             height: 100vh; display: flex; overflow: hidden;
             background-image: radial-gradient(circle at top right, #1a1c2c, transparent), radial-gradient(circle at bottom left, #0d1117, transparent);
         }
-
-        /* --- SIDEBAR PREMIUM --- */
         .sidebar {
             width: 300px; background: var(--glass); backdrop-filter: blur(20px);
             border-right: 1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column;
@@ -27,41 +24,18 @@
         }
         .profile { text-align: center; margin-bottom: 40px; }
         .avatar { width: 70px; height: 70px; background: linear-gradient(45deg, var(--accent), #00d4ff); border-radius: 20px; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: bold; box-shadow: 0 10px 20px var(--accent-glow); }
-        
         .stat-card { background: rgba(255,255,255,0.03); padding: 15px; border-radius: 12px; margin-bottom: 10px; border: 1px solid rgba(255,255,255,0.05); }
-        .stat-card:hover { background: rgba(255,255,255,0.07); transform: translateY(-2px); }
-
-        /* --- ZONE DE CHAT --- */
         .main-content { flex: 1; display: flex; flex-direction: column; position: relative; }
         #chat-container { flex: 1; overflow-y: auto; padding: 30px; display: flex; flex-direction: column; gap: 15px; scroll-behavior: smooth; }
-
         .msg-container { max-width: 70%; display: flex; flex-direction: column; animation: slideUp 0.4s ease-out forwards; }
         @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-
-        .bubble { 
-            background: var(--glass); padding: 14px; border-radius: 18px 18px 18px 4px; 
-            border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-        }
-        .bubble.me { background: var(--accent); align-self: flex-end; border-radius: 18px 18px 4px 18px; }
-
+        .bubble { background: var(--glass); padding: 14px; border-radius: 18px 18px 18px 4px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
         .file-box { background: rgba(0,0,0,0.2); border-radius: 8px; padding: 10px; display: flex; align-items: center; gap: 12px; margin-top: 5px; cursor: pointer; border: 1px dashed rgba(255,255,255,0.2); }
-        .file-box:hover { border-color: var(--accent); }
-
         .img-preview { max-width: 100%; border-radius: 12px; margin-top: 8px; border: 1px solid rgba(255,255,255,0.1); cursor: zoom-in; }
-
-        /* --- INPUT FUTURISTE --- */
-        .input-bar { padding: 20px 40px; background: transparent; position: relative; }
-        .input-wrapper { 
-            background: var(--glass); border-radius: 20px; padding: 10px 20px;
-            display: flex; align-items: center; gap: 15px; border: 1px solid rgba(255,255,255,0.1);
-            box-shadow: 0 -10px 30px rgba(0,0,0,0.3);
-        }
+        .input-bar { padding: 20px 40px; background: transparent; }
+        .input-wrapper { background: var(--glass); border-radius: 20px; padding: 10px 20px; display: flex; align-items: center; gap: 15px; border: 1px solid rgba(255,255,255,0.1); }
         .input-wrapper input { flex: 1; background: transparent; border: none; color: white; font-size: 1rem; outline: none; }
-
         .glow-btn { color: var(--text-dim); cursor: pointer; font-size: 1.2rem; }
-        .glow-btn:hover { color: var(--accent); text-shadow: 0 0 10px var(--accent); }
-
-        /* Effet Drag & Drop */
         .drag-overlay { position: fixed; inset: 0; background: var(--accent-glow); backdrop-filter: blur(5px); display: none; align-items: center; justify-content: center; z-index: 1000; border: 4px dashed var(--accent); pointer-events: none; }
     </style>
 </head>
@@ -75,11 +49,9 @@
             <h2 style="margin:0">Mando Cloud</h2>
             <p style="color:var(--text-dim); font-size: 0.8rem;">Genesis Edition v2.0</p>
         </div>
-
-        <div class="stat-card">🖼️ <b id="count-img">0</b> Images envoyées</div>
-        <div class="stat-card">📄 <b id="count-docs">0</b> Documents / Zip</div>
-        <div class="stat-card">🔗 <b id="count-links">0</b> Liens partagés</div>
-        
+        <div class="stat-card">🖼️ <b id="count-img">0</b> Images</div>
+        <div class="stat-card">📄 <b id="count-docs">0</b> Fichiers</div>
+        <div class="stat-card">🔗 <b id="count-links">0</b> Liens</div>
         <div style="margin-top: auto;">
             <button onclick="location.reload()" style="width:100%; padding:12px; border-radius:10px; background:rgba(255,255,255,0.05); color:white; border:none; cursor:pointer;">🔄 Sync Cloud</button>
         </div>
@@ -87,11 +59,10 @@
 
     <main class="main-content">
         <div id="chat-container"></div>
-        
         <div class="input-bar">
             <div class="input-wrapper">
                 <label class="glow-btn">📎 <input type="file" id="fileInput" hidden></label>
-                <input type="text" id="msgInput" placeholder="Écris un message, colle un lien ou glisse un fichier...">
+                <input type="text" id="msgInput" placeholder="Message ou glisse un fichier...">
                 <div id="sendBtn" class="glow-btn" style="color:var(--accent)">🚀</div>
             </div>
         </div>
@@ -102,12 +73,23 @@
         import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
         import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
 
-        const firebaseConfig = { projectId: "sation-44d19", storageBucket: "sation-44d19.appspot.com" };
+        const firebaseConfig = {
+            apiKey: "AIzaSyC4_4agQc-TefAeZNgTZvQMkCg7VUzq4ko",
+            authDomain: "door-52b7f.firebaseapp.com",
+            databaseURL: "https://door-52b7f-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "door-52b7f",
+            storageBucket: "door-52b7f.firebasestorage.app",
+            messagingSenderId: "225584391077",
+            appId: "1:225584391077:web:8bf224eedc0b42a5e13e4c",
+            measurementId: "G-S3LH57TJ4B"
+        };
+
+        // --- INITIALISATION (FIXÉ) ---
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const storage = getStorage(app);
 
-        // --- CORE LOGIC ---
+        // --- LOGIQUE ---
         const loadMessages = () => {
             const q = query(collection(db, "messages"), orderBy("createdAt", "asc"));
             onSnapshot(q, (snap) => {
@@ -121,21 +103,18 @@
                     if(isImg) stats.img++; else if(m.type === 'file') stats.doc++;
                     if(m.text && m.text.includes('http')) stats.link++;
 
-                    const time = m.createdAt ? m.createdAt.toDate().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '';
+                    const time = m.createdAt ? m.createdAt.toDate().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '--:--';
                     const wrap = document.createElement('div');
                     wrap.className = 'msg-container';
                     
                     let contentHTML = m.text ? `<p style="margin:0">${m.text.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" style="color:var(--accent)">$1</a>')}</p>` : '';
-                    
                     if(isImg) contentHTML += `<img src="${m.url}" class="img-preview" onclick="window.open('${m.url}')">`;
                     if(m.type === 'file') contentHTML += `<div class="file-box" onclick="window.open('${m.url}')">📁 <div style="font-size:0.8rem">${m.fileName || 'Fichier'}</div></div>`;
 
-                    wrap.innerHTML = `
-                        <div class="bubble">
-                            <div style="font-size:0.6rem; color:var(--text-dim); margin-bottom:5px;">${time} • <span onclick="deleteMsg('${d.id}')" style="cursor:pointer">Supprimer</span></div>
-                            ${contentHTML}
-                        </div>
-                    `;
+                    wrap.innerHTML = `<div class="bubble">
+                        <div style="font-size:0.6rem; color:var(--text-dim); margin-bottom:5px;">${time} • <span onclick="deleteMsg('${d.id}')" style="cursor:pointer">Supprimer</span></div>
+                        ${contentHTML}
+                    </div>`;
                     cont.appendChild(wrap);
                 });
                 document.getElementById('count-img').textContent = stats.img;
@@ -146,6 +125,7 @@
         };
 
         const uploadAndSend = async (file) => {
+            if(!file) return;
             const isImg = file.type.startsWith('image/');
             const sRef = ref(storage, `genesis/${Date.now()}_${file.name}`);
             await uploadBytes(sRef, file);
@@ -162,12 +142,11 @@
             inp.value = "";
         };
 
-        // --- EVENTS ---
+        // --- EVENEMENTS ---
         document.getElementById('sendBtn').onclick = sendMsg;
         document.getElementById('msgInput').onkeydown = (e) => e.key === 'Enter' && sendMsg();
         document.getElementById('fileInput').onchange = (e) => uploadAndSend(e.target.files[0]);
 
-        // Drag & Drop
         window.addEventListener('dragover', (e) => { e.preventDefault(); document.getElementById('dragOverlay').style.display = 'flex'; });
         document.getElementById('dragOverlay').addEventListener('dragleave', () => document.getElementById('dragOverlay').style.display = 'none');
         window.addEventListener('drop', (e) => {
@@ -176,14 +155,12 @@
             if(e.dataTransfer.files.length) uploadAndSend(e.dataTransfer.files[0]);
         });
 
-        // Paste (Ctrl+V)
         window.addEventListener('paste', (e) => {
             const item = e.clipboardData.items[0];
             if(item && item.kind === 'file') uploadAndSend(item.getAsFile());
         });
 
-        window.deleteMsg = (id) => confirm("Supprimer définitivement du Cloud ?") && deleteDoc(doc(db, "messages", id));
-
+        window.deleteMsg = (id) => confirm("Supprimer ?") && deleteDoc(doc(db, "messages", id));
         loadMessages();
     </script>
 </body>
