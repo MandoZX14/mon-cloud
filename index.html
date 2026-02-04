@@ -203,24 +203,19 @@
         };
         window.hideMenu = () => document.getElementById('context-menu').style.display = 'none';
 
-        // --- NOUVELLE FONCTION DE SUPPRESSION COMPLÈTE ---
+        // --- SUPPRESSION COMPLETE ---
         window.delMsg = async (id, type, urlEncoded) => {
             if(!confirm("SUPPRIMER DÉFINITIVEMENT ? (IRRÉVERSIBLE)")) return;
             
-            // 1. Suppression du fichier dans le Storage (si image/fichier)
             if((type === 'image' || type === 'file') && urlEncoded) {
                 const url = decodeURIComponent(urlEncoded);
                 try {
-                    // On crée une référence vers le fichier via son URL
                     const fileRef = ref(storage, url);
                     await deleteObject(fileRef);
-                    console.log("Fichier supprimé du Storage");
                 } catch (err) {
-                    console.warn("Erreur suppression Storage (déjà supprimé ?) :", err);
+                    console.warn("Fichier déjà supprimé ou introuvable.");
                 }
             }
-            
-            // 2. Suppression du message dans Firestore
             await deleteDoc(doc(db, "messages", id));
             document.getElementById('context-menu').style.display = 'none';
         };
@@ -255,7 +250,6 @@
                     const m = d.data();
                     
                     // --- CALCUL STOCKAGE ---
-                    // On additionne le poids de TOUT (si présent)
                     if (m.type === 'image' || m.type === 'file') {
                         totalBytes += Number(m.fileSize || 0);
                     }
@@ -265,8 +259,6 @@
                         if(m.type === 'image') galleryList.push(m.url);
                         const div = document.createElement('div');
                         div.className = `bubble ${m.isPinned ? 'pinned' : ''}`;
-                        
-                        // Astuce pour passer proprement l'objet 'm' au menu contextuel
                         const safeData = encodeURIComponent(JSON.stringify(m));
                         div.oncontextmenu = (e) => openMenu(e, d.id, safeData);
                         
@@ -279,11 +271,18 @@
                 
                 chat.scrollTop = chat.scrollHeight;
 
+                // --- MISE A JOUR BARRE INTELLIGENTE ---
+                let usedMo = totalBytes / (1024 * 1024);
                 let usedGo = totalBytes / (1024 * 1024 * 1024);
                 let perc = (totalBytes / MAX_STORAGE) * 100;
                 
-                document.getElementById('st-perc').innerText = `${usedGo.toFixed(2)} Go / 5.00 Go`;
-                document.getElementById('st-fill').style.width = Math.min(perc, 100) + "%";
+                // Affichage texte : Si c'est petit, on montre en Mo, sinon en Go
+                let textDisplay = usedGo < 0.01 ? usedMo.toFixed(2) + " Mo" : usedGo.toFixed(2) + " Go";
+                document.getElementById('st-perc').innerText = `${textDisplay} / 5.00 Go`;
+                
+                // Affichage visuel : Si y'a au moins un fichier (>0 octets) mais que c'est invisible (<2%), on force 2%
+                let visualPerc = (totalBytes > 0 && perc < 2) ? 2 : perc; 
+                document.getElementById('st-fill').style.width = Math.min(visualPerc, 100) + "%";
             });
         }
 
