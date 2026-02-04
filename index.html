@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Mando Cloud | Full Control</title>
+    <title>Mando Cloud</title>
     <style>
         :root { --accent: #0088cc; --secret: #7000ff; --bg: #0a0b10; --text: #fff; --danger: #ff4444; }
         * { box-sizing: border-box; transition: 0.2s; font-family: 'Segoe UI', sans-serif; -webkit-tap-highlight-color: transparent; }
@@ -19,34 +19,38 @@
         .group-item { padding: 12px; border-radius: 10px; margin-bottom: 8px; color: #888; cursor: pointer; border: 1px solid transparent; }
         .group-item.active { border-color: var(--accent); background: rgba(0,136,204,0.1); color: #fff; font-weight: bold; }
         
-        /* STORAGE BAR */
-        #st-box { margin-top: auto; padding: 15px; background: rgba(255,255,255,0.03); border-radius: 12px; cursor: pointer; border: 1px solid transparent; text-align: center; }
-        #st-fill { height: 4px; background: var(--accent); width: 0%; margin-top: 8px; }
-
-        /* CHAT & BUBBLES */
+        /* BARRE DE STOCKAGE (LE DÉGUISEMENT) */
+        #storage-container { margin-top: auto; padding: 15px; background: rgba(255,255,255,0.03); border-radius: 12px; cursor: pointer; border: 1px solid transparent; }
+        #storage-container:hover { background: rgba(255,255,255,0.05); }
+        .storage-header { display: flex; justify-content: space-between; font-size: 0.75rem; color: #888; margin-bottom: 6px; }
+        .progress-track { background: #222; height: 6px; border-radius: 3px; overflow: hidden; width: 100%; }
+        .progress-fill { height: 100%; background: var(--accent); width: 0%; transition: width 0.5s ease; }
+        
+        /* CHAT */
         .main { flex: 1; display: flex; flex-direction: column; position: relative; }
         #chat { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
-        .bubble { background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px; border-left: 4px solid var(--accent); align-self: flex-start; max-width: 85%; position: relative; word-wrap: break-word; }
+        .bubble { background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px; border-left: 4px solid var(--accent); align-self: flex-start; max-width: 85%; position: relative; word-wrap: break-word; user-select: none; }
         .bubble.pinned { border-left-color: gold; background: rgba(255, 215, 0, 0.1); }
         .img-preview { max-width: 100%; border-radius: 8px; margin-top: 8px; cursor: pointer; }
 
-        /* CONTEXT MENU (LE MENU CLIC DROIT) */
-        #context-menu { position: fixed; background: #1c1f2b; border: 1px solid #444; border-radius: 8px; z-index: 10002; display: none; box-shadow: 0 10px 30px #000; min-width: 180px; overflow: hidden; }
-        .menu-item { padding: 12px 15px; font-size: 0.9rem; cursor: pointer; color: #eee; border-bottom: 1px solid #333; display: flex; align-items: center; gap: 10px; }
-        .menu-item:hover { background: var(--accent); color: #fff; }
-        .menu-item:last-child { border-bottom: none; }
+        /* MENU CONTEXTUEL */
+        #context-menu { position: fixed; background: #1c1f2b; border: 1px solid #444; border-radius: 8px; z-index: 10002; display: none; box-shadow: 0 10px 30px #000; min-width: 180px; }
+        .menu-item { padding: 12px 15px; font-size: 0.9rem; cursor: pointer; color: #eee; border-bottom: 1px solid #333; }
+        .menu-item:hover { background: var(--accent); color: white; }
 
-        /* GALLERY (VISIONNEUSE) */
-        #gallery { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 10010; display: none; align-items: center; justify-content: center; flex-direction: column; }
-        #gal-img { max-width: 95%; max-height: 80vh; border-radius: 5px; box-shadow: 0 0 50px rgba(0,0,0,0.5); }
+        /* VISIONNEUSE */
+        #gallery { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 10010; display: none; align-items: center; justify-content: center; }
+        #gal-img { max-width: 95%; max-height: 80vh; border-radius: 5px; }
         
-        /* MODE SECRET & STYLE */
         body.vault-mode { --accent: var(--secret); }
+        /* Quand le mode secret est actif, la barre de stockage devient violette aussi */
+        body.vault-mode .progress-fill { background: var(--secret); }
+        
         .input-bar { padding: 15px; background: #0e1018; display: flex; gap: 10px; border-top: 1px solid #222; }
         #minput { flex: 1; background: #000; border: 1px solid #333; color: #fff; padding: 12px; border-radius: 8px; outline: none; }
         #sbtn { background: var(--accent); color: white; border: none; padding: 0 20px; border-radius: 8px; cursor: pointer; font-weight: bold; }
 
-        @media (max-width: 600px) { .sidebar { width: 80px; padding: 10px; } .sidebar h3, .group-item span { display: none; } }
+        @media (max-width: 600px) { .sidebar { width: 80px; padding: 10px; } .sidebar h3, .group-item span, .storage-header span:first-child { display: none; } .storage-header { justify-content: center; } }
     </style>
 </head>
 <body onclick="hideMenu()" oncontextmenu="return false;">
@@ -60,7 +64,6 @@
 
     <div id="gallery" onclick="this.style.display='none'">
         <img id="gal-img" src="">
-        <div style="margin-top:20px; color:#666; font-size:0.8rem;">Appuie sur ÉCHAP ou clique pour fermer</div>
     </div>
 
     <div id="context-menu"></div>
@@ -71,10 +74,16 @@
         <div class="group-item" onclick="setFolder(this, 'projets')"># <span>Projets</span></div>
         <div class="group-item" onclick="setFolder(this, 'photos')"># <span>Photos</span></div>
         
-        <div id="st-box" onclick="toggleSecret()">
-            <div style="font-size:0.7rem;">VAULT</div>
-            <div style="background:#222; height:4px; margin-top:5px;"><div id="st-fill"></div></div>
+        <div id="storage-container" onclick="toggleSecret()">
+            <div class="storage-header">
+                <span>STOCKAGE</span>
+                <span id="st-perc">0%</span>
+            </div>
+            <div class="progress-track">
+                <div id="st-fill" class="progress-fill"></div>
+            </div>
         </div>
+        
         <button onclick="logout()" style="margin-top:10px; background:var(--danger); color:white; border:none; padding:10px; border-radius:8px; cursor:pointer; width:100%;">🔒</button>
     </aside>
 
@@ -101,7 +110,7 @@
         const db = getFirestore(app);
         const storage = getStorage(app);
 
-        // --- AUTH 1704 ---
+        // --- AUTH ---
         const linput = document.getElementById('linput');
         linput.addEventListener('input', () => {
             if (linput.value === "1704") {
@@ -119,121 +128,10 @@
         let unsubscribe = null;
         const folders = ['genesis', 'projets', 'photos'];
 
-        // --- NAVIGATION ---
+        // --- LOGIQUE SECRÈTE ---
         window.toggleSecret = () => {
             isSecret = !isSecret;
             document.body.classList.toggle('vault-mode', isSecret);
-            document.getElementById('brand').innerText = isSecret ? "SECRET." : "MANDO.";
-            startSync();
-        };
-        window.setFolder = (el, name) => {
-            document.querySelectorAll('.group-item').forEach(i => i.classList.remove('active'));
-            el.classList.add('active'); currentFolder = name; startSync();
-        };
-
-        // --- MENU CONTEXTUEL (CLIC DROIT) ---
-        window.openMenu = (e, id, data) => {
-            e.preventDefault();
-            const menu = document.getElementById('context-menu');
-            // Positionnement intelligent (évite de sortir de l'écran)
-            let x = e.pageX; let y = e.pageY;
-            if (x + 200 > window.innerWidth) x = window.innerWidth - 210;
-            if (y + 200 > window.innerHeight) y = window.innerHeight - 210;
-            
-            menu.style.left = x + 'px';
-            menu.style.top = y + 'px';
-            menu.style.display = 'block';
-
-            // Options du menu
-            let moveOptions = folders.filter(f => f !== currentFolder).map(f => 
-                `<div class="menu-item" onclick="moveMsg('${id}', '${f}')">➡️ Vers #${f}</div>`
-            ).join('');
-
-            menu.innerHTML = `
-                <div class="menu-item" onclick="pinMsg('${id}', ${!data.isPinned})">
-                    ${data.isPinned ? '📌 Désépingler' : '📌 Épingler'}
-                </div>
-                ${moveOptions}
-                <div class="menu-item" style="color:var(--danger);" onclick="delMsg('${id}')">🗑️ Supprimer</div>
-            `;
-        };
-        window.hideMenu = () => document.getElementById('context-menu').style.display = 'none';
-
-        // --- ACTIONS ---
-        window.delMsg = async (id) => { await deleteDoc(doc(db, "messages", id)); };
-        window.pinMsg = async (id, val) => { await updateDoc(doc(db, "messages", id), { isPinned: val }); };
-        window.moveMsg = async (id, dest) => { 
-            const path = isSecret ? `secret_${dest}` : dest;
-            await updateDoc(doc(db, "messages", id), { folder: path }); 
-        };
-
-        // --- GALERIE ---
-        window.openGal = (url) => {
-            const g = document.getElementById('gallery');
-            document.getElementById('gal-img').src = url;
-            g.style.display = 'flex';
-        };
-
-        // --- SYNC ENGINE ---
-        function startSync() {
-            if (unsubscribe) unsubscribe();
-            const path = isSecret ? `secret_${currentFolder}` : currentFolder;
-            unsubscribe = onSnapshot(query(collection(db, "messages"), orderBy("createdAt", "asc")), (snap) => {
-                const chat = document.getElementById('chat'); chat.innerHTML = "";
-                let totalSize = 0;
-                snap.forEach(d => {
-                    const m = d.data();
-                    if(m.folder === path) {
-                        totalSize += (m.fileSize || 0);
-                        const div = document.createElement('div');
-                        div.className = `bubble ${m.isPinned ? 'pinned' : ''}`;
-                        
-                        // CLIC DROIT -> MENU
-                        div.oncontextmenu = (e) => openMenu(e, d.id, m);
-                        
-                        // CONTENU
-                        let content = `<div style="font-size:0.6rem; opacity:0.5; margin-bottom:4px;">${m.createdAt?.toDate().toLocaleTimeString() || ''} ${m.isPinned ? '⭐' : ''}</div>`;
-                        if (m.text) content += `<p style="margin:0;">${m.text}</p>`;
-                        if (m.type === 'image') content += `<img src="${m.url}" class="img-preview" onclick="openGal('${m.url}')">`;
-                        
-                        div.innerHTML = content;
-                        chat.appendChild(div);
-                    }
-                });
-                chat.scrollTop = chat.scrollHeight;
-                document.getElementById('st-fill').style.width = Math.min(totalSize / 1000000, 100) + "%";
-            });
-        }
-
-        // --- ENVOI ---
-        const send = async () => {
-            const inp = document.getElementById('minput'); if (!inp.value.trim()) return;
-            await addDoc(collection(db, "messages"), { 
-                text: inp.value, folder: isSecret ? `secret_${currentFolder}` : currentFolder, 
-                createdAt: serverTimestamp(), isPinned: false, type: 'text' 
-            });
-            inp.value = "";
-        };
-        document.getElementById('sbtn').onclick = send;
-        document.getElementById('minput').onkeydown = (e) => { if (e.key === 'Enter') send(); };
-
-        // --- UPLOAD FICHIER ---
-        document.getElementById('fup').onchange = async (e) => {
-            const file = e.target.files[0]; if (!file) return;
-            const path = isSecret ? `secret_${currentFolder}` : currentFolder;
-            const storageRef = ref(storage, `${path}/${Date.now()}_${file.name}`);
-            const task = uploadBytesResumable(storageRef, file);
-            task.on('state_changed', null, null, async () => {
-                const url = await getDownloadURL(task.snapshot.ref);
-                await addDoc(collection(db, "messages"), { 
-                    url, type: file.type.startsWith('image/') ? 'image' : 'file', 
-                    fileName: file.name, fileSize: file.size, folder: path, 
-                    createdAt: serverTimestamp(), isPinned: false 
-                });
-            });
-        };
-
-        if (localStorage.getItem('mando_auth') === 'true') startSync();
-    </script>
-</body>
-</html>
+            // Si secret actif, on change le nom pour faire genre "Systeme Admin" ou on garde MANDO
+            document.getElementById('brand').innerText = isSecret ? "SYSTEM." : "MANDO.";
+            startSync
