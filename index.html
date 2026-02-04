@@ -22,7 +22,6 @@
         * { box-sizing: border-box; transition: 0.2s; font-family: var(--font-main); -webkit-tap-highlight-color: transparent; }
         body { background: var(--bg); background-size: cover; background-position: center; color: var(--text); margin: 0; height: 100vh; display: flex; overflow: hidden; }
         
-        /* LOCK SCREEN */
         #lock-screen { position: fixed; inset: 0; background: #000; z-index: 10005; display: flex; align-items: center; justify-content: center; flex-direction: column; }
         .lock-box { padding: 40px; border: 1px solid var(--accent); border-radius: 4px; background: #0a0c10; text-align: center; width: 320px; box-shadow: 0 0 20px rgba(0,255,149,0.1); }
         .lock-input { background: #000; border: 1px solid var(--accent); color: var(--accent); padding: 12px; font-size: 1.8rem; width: 100%; text-align: center; outline: none; letter-spacing: 8px; margin-bottom: 15px; }
@@ -30,36 +29,30 @@
         @keyframes shake { 0% { transform: translateX(0); } 25% { transform: translateX(-8px); } 50% { transform: translateX(8px); } 100% { transform: translateX(0); } }
         .shake { animation: shake 0.3s ease-in-out; border-color: var(--danger) !important; color: var(--danger) !important; }
 
-        /* SIDEBAR */
         .sidebar { width: 250px; background: rgba(26, 29, 38, var(--panel-op)); border-right: 1px solid rgba(255,255,255,0.05); padding: 20px; display: flex; flex-direction: column; z-index: 10; backdrop-filter: blur(10px); }
         .brand { color: var(--accent); font-weight: bold; font-size: 1.2rem; margin-bottom: 30px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; }
         .group-item { padding: 12px; border-radius: var(--radius); margin-bottom: 8px; color: #7a8296; cursor: pointer; border-left: 3px solid transparent; }
         .group-item.active { border-left-color: var(--accent); background: rgba(0,255,149,0.05); color: #fff; }
         
-        /* STORAGE BAR */
         #storage-container { margin-top: auto; padding: 15px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: var(--radius); cursor: pointer; }
         .storage-header { display: flex; justify-content: space-between; font-size: 0.7rem; color: #666; margin-bottom: 6px; }
         .progress-track { background: #000; height: 6px; border-radius: 3px; overflow: hidden; width: 100%; }
         .progress-fill { height: 100%; background: var(--accent); width: 0%; transition: width 0.8s ease; }
         
-        /* CHAT */
         .main { flex: 1; display: flex; flex-direction: column; position: relative; background: rgba(13, 15, 20, 0.6); }
         #chat { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
         .bubble { background: rgba(30, 34, 45, 0.8); padding: 12px; border-radius: var(--radius); border-right: 3px solid var(--accent); align-self: flex-start; max-width: 85%; backdrop-filter: blur(5px); }
         .bubble.pinned { border-right-color: gold; background: rgba(255, 215, 0, 0.05); }
         .img-preview { max-width: 100%; border-radius: 2px; margin-top: 8px; cursor: pointer; }
 
-        /* MENU CONTEXTUEL */
         #context-menu { position: fixed; background: #0a0c10; border: 1px solid #333; border-radius: var(--radius); z-index: 10002; display: none; box-shadow: 0 10px 30px #000; min-width: 200px; }
         .menu-item { padding: 12px 15px; font-size: 0.8rem; cursor: pointer; color: #bbb; border-bottom: 1px solid #222; }
         .menu-item:hover { background: var(--accent); color: #000; }
 
-        /* SETTINGS */
         #settings-panel { display: none; padding: 15px; background: rgba(0,0,0,0.4); border: 1px solid var(--accent); border-radius: var(--radius); margin-bottom: 20px; }
         .set-row { margin-bottom: 10px; display: flex; flex-direction: column; gap: 5px; font-size: 0.75rem; }
         .set-row input { background: #000; border: 1px solid #333; color: var(--accent); padding: 8px; outline: none; }
 
-        /* GALLERY */
         #gallery { position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 10010; display: none; align-items: center; justify-content: center; }
         #gal-img { max-width: 95%; max-height: 85vh; border: 1px solid #333; }
         .gal-nav { position: absolute; top: 50%; width: 100%; display: flex; justify-content: space-between; padding: 0 30px; pointer-events: none; }
@@ -126,7 +119,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
         import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, doc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
-        import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
+        import { getStorage, ref, uploadBytesResumable, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyC4_4agQc-TefAeZNgTZvQMkCg7VUzq4ko", authDomain: "door-52b7f.firebaseapp.com",
@@ -187,18 +180,51 @@
             el.classList.add('active'); currentFolder = name; startSync();
         };
 
-        window.openMenu = (e, id, data) => {
+        window.openMenu = (e, id, dataText) => {
             e.preventDefault();
+            // On parse les données pour éviter les soucis de guillemets
+            const data = JSON.parse(decodeURIComponent(dataText));
+            
             const menu = document.getElementById('context-menu');
             menu.style.left = Math.min(e.pageX, window.innerWidth - 210) + 'px';
             menu.style.top = Math.min(e.pageY, window.innerHeight - 200) + 'px';
             menu.style.display = 'block';
+            
             let moveOps = folders.filter(f => f !== currentFolder).map(f => `<div class="menu-item" onclick="moveMsg('${id}', '${f}')">>> MOVE TO #${f}</div>`).join('');
-            menu.innerHTML = `<div class="menu-item" onclick="pinMsg('${id}', ${!data.isPinned})">${data.isPinned ? '>> UNPIN' : '>> PIN TO TOP'}</div>${moveOps}<div class="menu-item" style="color:var(--danger);" onclick="delMsg('${id}')">>> PURGE DATA</div>`;
+            
+            // On encode les paramètres pour la suppression
+            const urlSafe = data.url ? encodeURIComponent(data.url) : '';
+            
+            menu.innerHTML = `
+                <div class="menu-item" onclick="pinMsg('${id}', ${!data.isPinned})">${data.isPinned ? '>> UNPIN' : '>> PIN TO TOP'}</div>
+                ${moveOps}
+                <div class="menu-item" style="color:var(--danger);" onclick="delMsg('${id}', '${data.type}', '${urlSafe}')">>> PURGE DATA</div>
+            `;
         };
         window.hideMenu = () => document.getElementById('context-menu').style.display = 'none';
 
-        window.delMsg = async (id) => await deleteDoc(doc(db, "messages", id));
+        // --- NOUVELLE FONCTION DE SUPPRESSION COMPLÈTE ---
+        window.delMsg = async (id, type, urlEncoded) => {
+            if(!confirm("SUPPRIMER DÉFINITIVEMENT ? (IRRÉVERSIBLE)")) return;
+            
+            // 1. Suppression du fichier dans le Storage (si image/fichier)
+            if((type === 'image' || type === 'file') && urlEncoded) {
+                const url = decodeURIComponent(urlEncoded);
+                try {
+                    // On crée une référence vers le fichier via son URL
+                    const fileRef = ref(storage, url);
+                    await deleteObject(fileRef);
+                    console.log("Fichier supprimé du Storage");
+                } catch (err) {
+                    console.warn("Erreur suppression Storage (déjà supprimé ?) :", err);
+                }
+            }
+            
+            // 2. Suppression du message dans Firestore
+            await deleteDoc(doc(db, "messages", id));
+            document.getElementById('context-menu').style.display = 'none';
+        };
+
         window.pinMsg = async (id, val) => await updateDoc(doc(db, "messages", id), { isPinned: val });
         window.moveMsg = async (id, dest) => await updateDoc(doc(db, "messages", id), { folder: isSecret ? `secret_${dest}` : dest });
 
@@ -228,19 +254,22 @@
                 snap.forEach(d => {
                     const m = d.data();
                     
-                    // --- CORRECTION DU CALCUL : Sécurité numérique ---
-                    // On additionne le poids de TOUS les fichiers de la base (même hors dossier)
+                    // --- CALCUL STOCKAGE ---
+                    // On additionne le poids de TOUT (si présent)
                     if (m.type === 'image' || m.type === 'file') {
-                        // On force la conversion en nombre au cas où c'est une chaîne
                         totalBytes += Number(m.fileSize || 0);
                     }
 
-                    // --- AFFICHAGE : Seulement le dossier courant ---
+                    // --- AFFICHAGE ---
                     if(m.folder === path) {
                         if(m.type === 'image') galleryList.push(m.url);
                         const div = document.createElement('div');
                         div.className = `bubble ${m.isPinned ? 'pinned' : ''}`;
-                        div.oncontextmenu = (e) => openMenu(e, d.id, m);
+                        
+                        // Astuce pour passer proprement l'objet 'm' au menu contextuel
+                        const safeData = encodeURIComponent(JSON.stringify(m));
+                        div.oncontextmenu = (e) => openMenu(e, d.id, safeData);
+                        
                         let html = `<div style="font-size:0.55rem; opacity:0.3; margin-bottom:4px;">[${m.createdAt?.toDate().toLocaleTimeString() || ''}]</div>`;
                         if(m.text) html += `<p style="margin:0;">${m.text}</p>`;
                         if(m.type === 'image') html += `<img src="${m.url}" class="img-preview" onclick="openGal('${m.url}')">`;
@@ -250,12 +279,10 @@
                 
                 chat.scrollTop = chat.scrollHeight;
 
-                // --- MISE A JOUR BARRE ---
                 let usedGo = totalBytes / (1024 * 1024 * 1024);
                 let perc = (totalBytes / MAX_STORAGE) * 100;
                 
                 document.getElementById('st-perc').innerText = `${usedGo.toFixed(2)} Go / 5.00 Go`;
-                // On borne à 100% max pour pas que ça dépasse
                 document.getElementById('st-fill').style.width = Math.min(perc, 100) + "%";
             });
         }
@@ -272,6 +299,11 @@
             const file = e.target.files[0]; if (!file) return;
             const path = isSecret ? `secret_${currentFolder}` : currentFolder;
             const t = uploadBytesResumable(ref(storage, `${path}/${Date.now()}_${file.name}`), file);
+            
+            const btn = document.getElementById('sbtn');
+            const originalText = btn.innerText;
+            btn.innerText = "UP...";
+
             t.on('state_changed', null, null, async () => {
                 const url = await getDownloadURL(t.snapshot.ref);
                 await addDoc(collection(db, "messages"), { 
@@ -280,8 +312,9 @@
                     folder: path, 
                     createdAt: serverTimestamp(), 
                     isPinned: false, 
-                    fileSize: file.size // Stocke bien la taille en nombre
+                    fileSize: file.size 
                 });
+                btn.innerText = originalText;
             });
         };
         if (localStorage.getItem('mando_auth') === 'true') startSync();
