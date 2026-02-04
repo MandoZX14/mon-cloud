@@ -3,71 +3,63 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Mando Cloud | PRO</title>
+    <title>Mando Cloud</title>
     <style>
         :root { --accent: #0088cc; --secret: #7000ff; --bg: #0a0b10; --text: #fff; --danger: #ff4444; --success: #00ff88; }
         * { box-sizing: border-box; transition: 0.2s; font-family: 'Segoe UI', sans-serif; -webkit-tap-highlight-color: transparent; }
         body { background: var(--bg); color: var(--text); margin: 0; height: 100vh; display: flex; overflow: hidden; }
         
-        /* LOCK SCREEN 1704 */
+        /* LOCK SCREEN (ANIMÉ) */
         #lock-screen { position: fixed; inset: 0; background: #000; z-index: 10005; display: flex; align-items: center; justify-content: center; flex-direction: column; }
         .lock-box { padding: 40px; border: 2px solid var(--accent); border-radius: 20px; background: #0e1018; text-align: center; width: 300px; }
         .lock-input { background: #000; border: 1px solid var(--accent); color: #fff; padding: 15px; border-radius: 8px; font-size: 2rem; width: 100%; text-align: center; outline: none; letter-spacing: 10px; margin-bottom: 15px; }
-        #lock-msg { height: 20px; font-size: 0.8rem; font-weight: bold; letter-spacing: 2px; text-transform: uppercase; }
-        @keyframes shake { 0% { transform: translateX(0); } 25% { transform: translateX(-8px); } 50% { transform: translateX(8px); } 75% { transform: translateX(-8px); } 100% { transform: translateX(0); } }
+        #lock-msg { height: 20px; font-size: 0.9rem; font-weight: bold; letter-spacing: 2px; }
+        @keyframes shake { 0% { transform: translateX(0); } 25% { transform: translateX(-10px); } 50% { transform: translateX(10px); } 75% { transform: translateX(-10px); } 100% { transform: translateX(0); } }
         .shake { animation: shake 0.3s ease-in-out; border-color: var(--danger) !important; color: var(--danger) !important; }
 
         /* SIDEBAR */
-        .sidebar { width: 260px; background: rgba(23, 28, 41, 0.95); border-right: 1px solid #222; padding: 20px; display: flex; flex-direction: column; z-index: 10; }
-        .brand { color: var(--accent); font-weight: bold; font-size: 1.2rem; margin-bottom: 30px; }
-        .group-item { padding: 12px; border-radius: 10px; margin-bottom: 8px; color: #888; cursor: pointer; border: 1px solid transparent; font-size: 0.9rem; }
+        .sidebar { width: 260px; background: rgba(23, 28, 41, 0.95); border-right: 1px solid #222; padding: 20px; display: flex; flex-direction: column; }
+        .group-item { padding: 12px; border-radius: 10px; margin-bottom: 8px; color: #888; cursor: pointer; border: 1px solid transparent; }
         .group-item.active { border-color: var(--accent); background: rgba(0,136,204,0.1); color: #fff; font-weight: bold; }
         
-        /* BARRE DE STOCKAGE FONCTIONNELLE (CACHE DU VAULT) */
-        #storage-container { margin-top: auto; padding: 15px; background: rgba(255,255,255,0.03); border-radius: 12px; cursor: pointer; }
-        .storage-header { display: flex; justify-content: space-between; font-size: 0.7rem; color: #aaa; margin-bottom: 8px; }
-        .progress-track { background: #222; height: 6px; border-radius: 3px; overflow: hidden; }
-        .progress-fill { height: 100%; background: var(--accent); width: 0%; transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
+        /* BARRE DE STOCKAGE (VRAIE JAUGE 5 GO) */
+        #storage-container { margin-top: auto; padding: 15px; background: rgba(255,255,255,0.03); border-radius: 12px; cursor: pointer; border: 1px solid transparent; }
+        #storage-container:hover { background: rgba(255,255,255,0.05); }
+        .storage-header { display: flex; justify-content: space-between; font-size: 0.75rem; color: #aaa; margin-bottom: 6px; }
+        .progress-track { background: #222; height: 6px; border-radius: 3px; overflow: hidden; width: 100%; }
+        .progress-fill { height: 100%; background: var(--accent); width: 0%; transition: width 0.5s ease; }
         
-        /* CHAT AREA */
-        .main { flex: 1; display: flex; flex-direction: column; position: relative; background: #07080c; }
-        #chat { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
-        .bubble { background: rgba(255,255,255,0.04); padding: 12px; border-radius: 12px; border-left: 4px solid var(--accent); align-self: flex-start; max-width: 85%; position: relative; word-wrap: break-word; }
-        .bubble.pinned { border-left-color: gold; background: rgba(255, 215, 0, 0.08); box-shadow: 0 0 10px rgba(255,215,0,0.1); }
-        .img-preview { max-width: 100%; border-radius: 8px; margin-top: 8px; cursor: pointer; display: block; }
+        /* CHAT */
+        .main { flex: 1; display: flex; flex-direction: column; position: relative; }
+        #chat { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
+        .bubble { background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px; border-left: 4px solid var(--accent); align-self: flex-start; max-width: 85%; position: relative; word-wrap: break-word; user-select: none; }
+        .bubble.pinned { border-left-color: gold; background: rgba(255, 215, 0, 0.1); }
+        .img-preview { max-width: 100%; border-radius: 8px; margin-top: 8px; cursor: pointer; }
 
-        /* CONTEXT MENU */
-        #context-menu { position: fixed; background: #1c1f2b; border: 1px solid #444; border-radius: 10px; z-index: 10002; display: none; box-shadow: 0 10px 40px rgba(0,0,0,0.8); min-width: 190px; overflow: hidden; }
-        .menu-item { padding: 12px 18px; font-size: 0.85rem; cursor: pointer; color: #eee; border-bottom: 1px solid #2d313f; }
+        /* MENU CONTEXTUEL */
+        #context-menu { position: fixed; background: #1c1f2b; border: 1px solid #444; border-radius: 8px; z-index: 10002; display: none; box-shadow: 0 10px 30px #000; min-width: 180px; }
+        .menu-item { padding: 12px 15px; font-size: 0.9rem; cursor: pointer; color: #eee; border-bottom: 1px solid #333; }
         .menu-item:hover { background: var(--accent); color: white; }
-        .menu-item:last-child { border-bottom: none; }
 
-        /* GALLERY VIEW */
-        #gallery { position: fixed; inset: 0; background: rgba(0,0,0,0.96); z-index: 10010; display: none; align-items: center; justify-content: center; }
-        #gal-img { max-width: 95%; max-height: 85vh; border-radius: 4px; box-shadow: 0 0 40px #000; }
+        /* VISIONNEUSE */
+        #gallery { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 10010; display: none; align-items: center; justify-content: center; }
+        #gal-img { max-width: 95%; max-height: 80vh; border-radius: 5px; }
         
-        /* VAULT MODE */
         body.vault-mode { --accent: var(--secret); }
         body.vault-mode .progress-fill { background: var(--secret); }
         
-        /* INPUTS */
-        .input-bar { padding: 15px 20px; background: #0e1018; display: flex; gap: 12px; border-top: 1px solid #222; align-items: center; }
-        #minput { flex: 1; background: #000; border: 1px solid #333; color: #fff; padding: 12px; border-radius: 8px; outline: none; font-size: 0.95rem; }
-        #sbtn { background: var(--accent); color: white; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; }
-        .clip-btn { font-size: 1.4rem; color: #555; cursor: pointer; padding: 0 5px; }
+        .input-bar { padding: 15px; background: #0e1018; display: flex; gap: 10px; border-top: 1px solid #222; }
+        #minput { flex: 1; background: #000; border: 1px solid #333; color: #fff; padding: 12px; border-radius: 8px; outline: none; }
+        #sbtn { background: var(--accent); color: white; border: none; padding: 0 20px; border-radius: 8px; cursor: pointer; font-weight: bold; }
 
-        @media (max-width: 600px) { 
-            .sidebar { width: 75px; padding: 15px 10px; } 
-            .brand, .group-item span, .storage-header span:first-child { display: none; }
-            .storage-header { justify-content: center; font-size: 0.6rem; }
-        }
+        @media (max-width: 600px) { .sidebar { width: 80px; padding: 10px; } .sidebar h3, .group-item span, .storage-header span:first-child { display: none; } .storage-header { justify-content: center; font-size: 0.6rem; } }
     </style>
 </head>
 <body onclick="hideMenu()" oncontextmenu="return false;">
 
     <div id="lock-screen">
         <div class="lock-box">
-            <h2 style="color:var(--accent); margin-top:0; font-size: 1.2rem; letter-spacing: 2px;">MANDO CLOUD</h2>
+            <h2 style="color:var(--accent); margin-top:0;">MANDO CLOUD</h2>
             <input type="password" id="linput" class="lock-input" maxlength="4" autofocus placeholder="****">
             <div id="lock-msg"></div>
         </div>
@@ -80,7 +72,7 @@
     <div id="context-menu"></div>
 
     <aside class="sidebar">
-        <div class="brand" id="brand">MANDO.</div>
+        <h3 id="brand" style="color:var(--accent)">MANDO.</h3>
         <div class="group-item active" onclick="setFolder(this, 'genesis')"># <span>Général</span></div>
         <div class="group-item" onclick="setFolder(this, 'projets')"># <span>Projets</span></div>
         <div class="group-item" onclick="setFolder(this, 'photos')"># <span>Photos</span></div>
@@ -95,14 +87,14 @@
             </div>
         </div>
         
-        <button onclick="logout()" style="margin-top:15px; background:rgba(255,68,68,0.1); color:var(--danger); border:1px solid var(--danger); padding:10px; border-radius:8px; cursor:pointer; font-size: 0.7rem; font-weight: bold;">🔒 LOGOUT</button>
+        <button onclick="logout()" style="margin-top:10px; background:var(--danger); color:white; border:none; padding:10px; border-radius:8px; cursor:pointer; width:100%;">🔒</button>
     </aside>
 
     <main class="main">
         <div id="chat"></div>
         <div class="input-bar">
-            <label class="clip-btn">📎<input type="file" id="fup" hidden></label>
-            <input type="text" id="minput" placeholder="Écrire un message...">
+            <label style="cursor:pointer; font-size:1.5rem; color:#666;">📎<input type="file" id="fup" hidden></label>
+            <input type="text" id="minput" placeholder="Message...">
             <button id="sbtn">OK</button>
         </div>
     </main>
@@ -121,24 +113,27 @@
         const db = getFirestore(app);
         const storage = getStorage(app);
 
-        // --- AUTH LOGIC ---
+        // --- AUTH & ANIMATIONS ---
         const linput = document.getElementById('linput');
         const lockMsg = document.getElementById('lock-msg');
+
         linput.addEventListener('input', () => {
-            if (linput.value.length === 4) {
-                if (linput.value === "1704") {
+            const val = linput.value;
+            if (val.length === 4) {
+                if (val === "1704") {
                     linput.style.borderColor = "var(--success)";
+                    linput.style.color = "var(--success)";
                     lockMsg.innerText = "ACCESS GRANTED";
                     lockMsg.style.color = "var(--success)";
                     localStorage.setItem('mando_auth', 'true');
-                    setTimeout(() => { document.getElementById('lock-screen').style.display = 'none'; startSync(); }, 600);
+                    setTimeout(() => { document.getElementById('lock-screen').style.display = 'none'; startSync(); }, 800);
                 } else {
                     linput.classList.add('shake');
                     lockMsg.innerText = "WRONG CODE";
                     lockMsg.style.color = "var(--danger)";
                     setTimeout(() => {
                         linput.value = ""; linput.classList.remove('shake');
-                        lockMsg.innerText = "";
+                        linput.style.borderColor = "var(--accent)"; linput.style.color = "white"; lockMsg.innerText = "";
                     }, 1000);
                 }
             }
@@ -146,14 +141,14 @@
         if (localStorage.getItem('mando_auth') === 'true') document.getElementById('lock-screen').style.display = 'none';
         window.logout = () => { localStorage.clear(); location.reload(); };
 
-        // --- CORE VARS ---
+        // --- VARS ---
         let currentFolder = "genesis";
         let isSecret = false;
         let unsubscribe = null;
         const folders = ['genesis', 'projets', 'photos'];
-        const MAX_STORAGE = 5 * 1024 * 1024 * 1024; // Limite 5 Go
+        const MAX_STORAGE = 5 * 1024 * 1024 * 1024; // 5 Go en octets
 
-        // --- NAVIGATION SECRÈTE ---
+        // --- LOGIQUE SECRÈTE ---
         window.toggleSecret = () => {
             isSecret = !isSecret;
             document.body.classList.toggle('vault-mode', isSecret);
@@ -166,22 +161,22 @@
             el.classList.add('active'); currentFolder = name; startSync();
         };
 
-        // --- CONTEXT MENU ---
+        // --- MENU CONTEXTUEL ---
         window.openMenu = (e, id, data) => {
             e.preventDefault();
             const menu = document.getElementById('context-menu');
             let x = e.pageX, y = e.pageY;
-            if (x + 200 > window.innerWidth) x = window.innerWidth - 210;
-            if (y + 180 > window.innerHeight) y = window.innerHeight - 190;
+            if (x + 180 > window.innerWidth) x = window.innerWidth - 190;
+            if (y + 150 > window.innerHeight) y = window.innerHeight - 160;
             menu.style.left = x + 'px'; menu.style.top = y + 'px'; menu.style.display = 'block';
 
-            let moveOps = folders.filter(f => f !== currentFolder).map(f => 
-                `<div class="menu-item" onclick="moveMsg('${id}', '${f}')">➡️ Déplacer vers #${f}</div>`
+            let moveOptions = folders.filter(f => f !== currentFolder).map(f => 
+                `<div class="menu-item" onclick="moveMsg('${id}', '${f}')">➡️ Vers #${f}</div>`
             ).join('');
 
             menu.innerHTML = `
-                <div class="menu-item" onclick="pinMsg('${id}', ${!data.isPinned})">${data.isPinned ? '📍 Désépingler' : '📌 Épingler'}</div>
-                ${moveOps}
+                <div class="menu-item" onclick="pinMsg('${id}', ${!data.isPinned})">${data.isPinned ? '📌 Désépingler' : '📌 Épingler'}</div>
+                ${moveOptions}
                 <div class="menu-item" style="color:var(--danger);" onclick="delMsg('${id}')">🗑️ Supprimer</div>
             `;
         };
@@ -193,68 +188,68 @@
         window.moveMsg = async (id, dest) => await updateDoc(doc(db, "messages", id), { folder: isSecret ? `secret_${dest}` : dest });
         window.openGal = (url) => { document.getElementById('gal-img').src = url; document.getElementById('gallery').style.display = 'flex'; };
 
-        // --- SYNC & REAL STORAGE CALC ---
+        // --- SYNC ENGINE ---
         function startSync() {
             if (unsubscribe) unsubscribe();
             const path = isSecret ? `secret_${currentFolder}` : currentFolder;
-            
             unsubscribe = onSnapshot(query(collection(db, "messages"), orderBy("createdAt", "asc")), (snap) => {
                 const chat = document.getElementById('chat'); chat.innerHTML = "";
-                let totalBytes = 0;
+                
+                let currentBytes = 0;
                 
                 snap.forEach(d => {
                     const m = d.data();
-                    // On calcule le poids pour TOUTE la base (public + secret) pour que la barre soit réelle
-                    if (m.type === 'image' || m.type === 'file') totalBytes += (m.fileSize || 0);
-
-                    // Mais on n'affiche que les messages du dossier en cours
                     if(m.folder === path) {
+                        // Calcul du poids réel (Si pas de fichier, on compte 50 octets pour le texte)
+                        currentBytes += (m.fileSize || 50);
+
                         const div = document.createElement('div');
                         div.className = `bubble ${m.isPinned ? 'pinned' : ''}`;
                         div.oncontextmenu = (e) => openMenu(e, d.id, m);
                         
-                        let html = `<div style="font-size:0.55rem; opacity:0.4; margin-bottom:4px;">${m.createdAt?.toDate().toLocaleTimeString() || ''}</div>`;
-                        if(m.text) html += `<p style="margin:0; line-height:1.4;">${m.text}</p>`;
-                        if(m.type === 'image') html += `<img src="${m.url}" class="img-preview" onclick="openGal('${m.url}')">`;
-                        
-                        div.innerHTML = html;
+                        let c = `<div style="font-size:0.6rem; opacity:0.5;">${m.createdAt?.toDate().toLocaleTimeString() || ''} ${m.isPinned ? '⭐' : ''}</div>`;
+                        if(m.text) c += `<p style="margin:5px 0 0;">${m.text}</p>`;
+                        if(m.type === 'image') c += `<img src="${m.url}" class="img-preview" onclick="openGal('${m.url}')">`;
+                        div.innerHTML = c;
                         chat.appendChild(div);
                     }
                 });
                 chat.scrollTop = chat.scrollHeight;
 
-                // Mise à jour Jauge Go
-                let usedGo = totalBytes / (1024 * 1024 * 1024);
-                let perc = (totalBytes / MAX_STORAGE) * 100;
+                // --- CALCUL STOCKAGE EN GO ---
+                // Conversion en Go (1 Go = 1073741824 octets)
+                let usedGo = currentBytes / 1073741824;
+                let percent = (currentBytes / MAX_STORAGE) * 100;
+                
+                // Si c'est très petit (ko ou Mo), on affiche quand même en Go pour le style (ex: 0.00 Go)
+                // Mais si tu veux voir que ça bouge, il faut uploader des images
                 document.getElementById('st-perc').innerText = `${usedGo.toFixed(2)} Go / 5.00 Go`;
-                document.getElementById('st-fill').style.width = Math.max(perc, 1) + "%";
+                document.getElementById('st-fill').style.width = Math.max(percent, 1) + "%"; // Min 1% pour faire joli
             });
         }
 
-        // --- ENVOI ---
         const send = async () => {
             const inp = document.getElementById('minput'); if (!inp.value.trim()) return;
+            // On compte 100 octets par message texte
             await addDoc(collection(db, "messages"), { 
                 text: inp.value, folder: isSecret ? `secret_${currentFolder}` : currentFolder, 
-                createdAt: serverTimestamp(), type: 'text', isPinned: false, fileSize: 0 
+                createdAt: serverTimestamp(), type: 'text', isPinned: false, fileSize: 100 
             });
             inp.value = "";
         };
         document.getElementById('sbtn').onclick = send;
         document.getElementById('minput').onkeydown = (e) => { if (e.key === 'Enter') send(); };
 
-        // --- UPLOAD ---
         document.getElementById('fup').onchange = async (e) => {
             const file = e.target.files[0]; if (!file) return;
             const path = isSecret ? `secret_${currentFolder}` : currentFolder;
-            const refS = ref(storage, `${path}/${Date.now()}_${file.name}`);
-            const task = uploadBytesResumable(refS, file);
-            task.on('state_changed', null, null, async () => {
-                const url = await getDownloadURL(task.snapshot.ref);
+            const t = uploadBytesResumable(ref(storage, `${path}/${Date.now()}_${file.name}`), file);
+            t.on('state_changed', null, null, async () => {
+                const url = await getDownloadURL(t.snapshot.ref);
                 await addDoc(collection(db, "messages"), { 
                     url, type: file.type.startsWith('image/') ? 'image' : 'file', 
                     folder: path, createdAt: serverTimestamp(), isPinned: false, 
-                    fileSize: file.size 
+                    fileSize: file.size // On stocke la VRAIE taille du fichier
                 });
             });
         };
