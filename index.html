@@ -2,8 +2,8 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Mando Cloud | STI2D Edition</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Mando Cloud | Mobile</title>
     <style id="custom-theme">
         :root { 
             --accent: #00ff95; 
@@ -13,144 +13,171 @@
             --text: #e0e0e0; 
             --danger: #ff4444; 
             --success: #00ff95;
-            --radius: 4px; 
+            --radius: 8px; /* Plus arrondi pour mobile */
             --panel-op: 0.95; 
             --font-main: 'Consolas', 'Monaco', monospace; 
         }
     </style>
     <style>
         * { box-sizing: border-box; transition: 0.2s; font-family: var(--font-main); -webkit-tap-highlight-color: transparent; }
-        body { background: var(--bg); background-size: cover; background-position: center; color: var(--text); margin: 0; height: 100vh; display: flex; overflow: hidden; }
+        
+        /* FIX MOBILE : Utilisation de dvh pour gérer le clavier virtuel */
+        body { 
+            background: var(--bg); background-size: cover; background-position: center; 
+            color: var(--text); margin: 0; 
+            height: 100dvh; /* Dynamic Viewport Height */
+            display: flex; overflow: hidden; 
+            position: fixed; /* Fixe le body pour éviter le scroll élastique */
+            width: 100%;
+        }
         
         /* LOCK SCREEN */
         #lock-screen { position: fixed; inset: 0; background: #000; z-index: 10005; display: flex; align-items: center; justify-content: center; flex-direction: column; }
-        .lock-box { padding: 40px; border: 1px solid var(--accent); border-radius: 4px; background: #0a0c10; text-align: center; width: 320px; box-shadow: 0 0 20px rgba(0,255,149,0.1); }
-        .lock-input { background: #000; border: 1px solid var(--accent); color: var(--accent); padding: 12px; font-size: 1.8rem; width: 100%; text-align: center; outline: none; letter-spacing: 8px; margin-bottom: 15px; }
-        #lock-msg { height: 20px; font-size: 0.8rem; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; }
-        .shake { animation: shake 0.3s ease-in-out; border-color: var(--danger) !important; color: var(--danger) !important; }
-        @keyframes shake { 0% { transform: translateX(0); } 25% { transform: translateX(-8px); } 50% { transform: translateX(8px); } 100% { transform: translateX(0); } }
+        .lock-box { padding: 30px; border: 1px solid var(--accent); border-radius: var(--radius); background: #0a0c10; text-align: center; width: 90%; max-width: 320px; }
+        .lock-input { background: #000; border: 1px solid var(--accent); color: var(--accent); padding: 15px; font-size: 1.5rem; width: 100%; text-align: center; outline: none; letter-spacing: 5px; margin-bottom: 15px; border-radius: var(--radius); }
+        #lock-msg { height: 20px; font-size: 0.9rem; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; }
 
-        /* SIDEBAR */
-        .sidebar { width: 250px; background: rgba(26, 29, 38, var(--panel-op)); border-right: 1px solid rgba(255,255,255,0.05); padding: 20px; display: flex; flex-direction: column; z-index: 10; backdrop-filter: blur(10px); }
+        /* SIDEBAR (Version Mobile Optimisée) */
+        .sidebar { 
+            width: 250px; background: rgba(26, 29, 38, var(--panel-op)); 
+            border-right: 1px solid rgba(255,255,255,0.05); padding: 20px; 
+            display: flex; flex-direction: column; z-index: 10; backdrop-filter: blur(10px); 
+        }
         .brand { color: var(--accent); font-weight: bold; font-size: 1.2rem; margin-bottom: 30px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; }
-        .group-item { padding: 12px; border-radius: var(--radius); margin-bottom: 8px; color: #7a8296; cursor: pointer; border-left: 3px solid transparent; }
+        .group-item { padding: 15px; border-radius: var(--radius); margin-bottom: 8px; color: #7a8296; cursor: pointer; border-left: 3px solid transparent; font-size: 1.1rem; /* Plus gros pour le doigt */ }
         .group-item.active { border-left-color: var(--accent); background: rgba(0,255,149,0.05); color: #fff; }
-        .group-item:hover { color: #fff; background: rgba(255,255,255,0.03); }
-
-        /* STORAGE BAR */
+        
         #storage-container { margin-top: auto; padding: 15px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: var(--radius); cursor: pointer; margin-bottom: 10px; }
-        .storage-header { display: flex; justify-content: space-between; font-size: 0.7rem; color: #666; margin-bottom: 6px; }
-        .progress-track { background: #000; height: 6px; border-radius: 3px; overflow: hidden; width: 100%; }
+        .progress-track { background: #000; height: 8px; border-radius: 4px; overflow: hidden; width: 100%; }
         .progress-fill { height: 100%; background: var(--accent); width: 0%; transition: width 0.8s ease; }
         
-        /* CHAT */
-        .main { flex: 1; display: flex; flex-direction: column; position: relative; background: rgba(13, 15, 20, 0.6); }
-        #chat { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
-        .bubble { background: rgba(30, 34, 45, 0.8); padding: 12px; border-radius: var(--radius); border-right: 3px solid var(--accent); align-self: flex-start; max-width: 85%; backdrop-filter: blur(5px); word-wrap: break-word; }
-        .bubble.pinned { border-right-color: gold; background: rgba(255, 215, 0, 0.05); }
-        .img-preview { max-width: 100%; border-radius: 2px; margin-top: 8px; cursor: pointer; }
+        /* CHAT AREA */
+        .main { flex: 1; display: flex; flex-direction: column; position: relative; background: rgba(13, 15, 20, 0.6); min-width: 0; /* Important pour flexbox */ }
         
-        /* LIENS CLIQUABLES */
-        .bubble a { color: var(--accent); text-decoration: underline; word-break: break-all; font-weight: bold; }
-        .bubble a:hover { color: #fff; text-decoration: none; }
+        #chat { 
+            flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 15px; 
+            scroll-behavior: smooth; 
+            -webkit-overflow-scrolling: touch; /* Scroll fluide sur iOS */
+        }
+        
+        .bubble { background: rgba(30, 34, 45, 0.9); padding: 14px; border-radius: var(--radius); border-right: 4px solid var(--accent); align-self: flex-start; max-width: 90%; backdrop-filter: blur(5px); word-wrap: break-word; font-size: 1rem; line-height: 1.4; }
+        .bubble.pinned { border-right-color: gold; background: rgba(255, 215, 0, 0.05); }
+        .img-preview { max-width: 100%; border-radius: 4px; margin-top: 10px; cursor: pointer; }
+        .bubble a { color: var(--accent); text-decoration: underline; font-weight: bold; }
 
-        /* MENU CONTEXTUEL */
-        #context-menu { position: fixed; background: #0a0c10; border: 1px solid #333; border-radius: var(--radius); z-index: 10002; display: none; box-shadow: 0 10px 30px #000; min-width: 200px; }
-        .menu-item { padding: 12px 15px; font-size: 0.8rem; cursor: pointer; color: #bbb; border-bottom: 1px solid #222; }
-        .menu-item:hover { background: var(--accent); color: #000; }
+        /* INPUT BAR (Fix Clavier) */
+        .input-bar { 
+            padding: 10px; background: #0a0c10; display: flex; gap: 10px; 
+            border-top: 1px solid #333; z-index: 20;
+            padding-bottom: env(safe-area-inset-bottom); /* Fix pour iPhone X+ */
+        }
+        
+        /* FIX CLAVIER CRITIQUE : Font-size 16px empêche le zoom auto sur iOS */
+        #minput { 
+            flex: 1; background: #1a1d26; border: 1px solid #333; color: #fff; 
+            padding: 14px; outline: none; border-radius: 25px; 
+            font-size: 16px; /* CRUCIAL */
+        }
+        
+        #sbtn { 
+            background: var(--accent); color: #000; border: none; 
+            padding: 0 20px; cursor: pointer; font-weight: bold; 
+            border-radius: 25px; font-size: 0.9rem;
+        }
 
-        /* FENÊTRE DE CONFIGURATION */
-        #config-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 10020; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
-        .config-box { width: 350px; background: var(--panel); border: 1px solid var(--accent); padding: 25px; border-radius: var(--radius); box-shadow: 0 0 30px rgba(0,0,0,0.5); }
-        .config-title { color: var(--accent); margin: 0 0 20px 0; border-bottom: 1px solid #333; padding-bottom: 10px; font-size: 1rem; font-weight: bold; letter-spacing: 1px; }
-        .set-row { margin-bottom: 15px; display: flex; flex-direction: column; gap: 5px; font-size: 0.8rem; color: #bbb; }
-        .set-row input { background: #000; border: 1px solid #444; color: #fff; padding: 10px; outline: none; border-radius: var(--radius); }
-        .set-row input:focus { border-color: var(--accent); }
-        .btn-action { width: 100%; padding: 12px; cursor: pointer; border-radius: var(--radius); font-weight: bold; border: none; margin-top: 10px; }
+        /* MEDIA QUERIES POUR MOBILE */
+        @media (max-width: 600px) { 
+            .sidebar { width: 70px; padding: 10px; align-items: center; } 
+            .brand, .group-item span, .storage-header, .set-row span, .btn-config-text { display: none; } 
+            .group-item { padding: 15px 5px; text-align: center; width: 100%; margin-bottom: 15px; font-size: 1.2rem; }
+            .lock-box { width: 95%; padding: 20px; }
+            
+            /* Ajustement Menu Contextuel Mobile */
+            #context-menu { width: 250px; left: 50% !important; top: 50% !important; transform: translate(-50%, -50%); box-shadow: 0 0 50px rgba(0,0,0,0.8); border: 1px solid var(--accent); }
+            .menu-item { padding: 15px; font-size: 1rem; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        }
+
+        /* MODAL CONFIG */
+        #config-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 10020; align-items: center; justify-content: center; }
+        .config-box { width: 90%; background: var(--panel); border: 1px solid var(--accent); padding: 20px; border-radius: var(--radius); }
+        .set-row input { background: #000; border: 1px solid #444; color: #fff; padding: 12px; outline: none; border-radius: var(--radius); width: 100%; font-size: 16px; }
+        .btn-action { padding: 15px; font-size: 1rem; margin-top: 15px; width: 100%; border-radius: var(--radius); border: none; font-weight: bold; }
         .btn-save { background: var(--accent); color: #000; }
-        .btn-cancel { background: transparent; color: #bbb; border: 1px solid #444; }
+        .btn-cancel { background: transparent; color: #fff; border: 1px solid #555; }
 
         /* GALLERY */
-        #gallery { position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 10010; display: none; align-items: center; justify-content: center; }
-        #gal-img { max-width: 95%; max-height: 85vh; border: 1px solid #333; }
-        .gal-nav { position: absolute; top: 50%; width: 100%; display: flex; justify-content: space-between; padding: 0 30px; pointer-events: none; }
-        .gal-btn { pointer-events: auto; background: rgba(0,255,149,0.1); color: var(--accent); border: 1px solid var(--accent); padding: 15px; cursor: pointer; font-size: 1.2rem; }
-
-        body.vault-mode { --accent: var(--secret); }
-
-        .input-bar { padding: 15px; background: rgba(10, 12, 16, var(--panel-op)); display: flex; gap: 10px; border-top: 1px solid #222; backdrop-filter: blur(10px); }
-        #minput { flex: 1; background: #000; border: 1px solid #333; color: #fff; padding: 12px; outline: none; border-radius: var(--radius); }
-        #sbtn { background: var(--accent); color: #000; border: none; padding: 0 20px; cursor: pointer; font-weight: bold; border-radius: var(--radius); }
-
-        @media (max-width: 600px) { .sidebar { width: 65px; padding: 10px; } .brand, .group-item span, .storage-header, .set-row span, .btn-config-text { display: none; } }
+        #gallery { position: fixed; inset: 0; background: #000; z-index: 10010; display: none; align-items: center; justify-content: center; }
+        #gal-img { max-width: 100%; max-height: 90vh; }
+        .gal-btn { padding: 20px; font-size: 2rem; background: transparent; border: none; color: var(--accent); }
     </style>
 </head>
 <body onclick="hideMenu()" oncontextmenu="return false;">
 
     <div id="lock-screen">
         <div class="lock-box">
-            <h2 style="color:var(--accent); font-size: 1rem; margin-bottom: 15px; letter-spacing: 2px;">SYSTEM AUTHENTICATION</h2>
-            <input type="password" id="linput" class="lock-input" maxlength="4" autofocus placeholder="0000">
+            <h2 style="color:var(--accent); font-size: 1rem; margin-bottom: 20px; letter-spacing: 2px;">AUTHENTICATION</h2>
+            <input type="tel" id="linput" class="lock-input" maxlength="4" autofocus placeholder="• • • •">
             <div id="lock-msg"></div>
         </div>
     </div>
 
     <div id="config-modal">
         <div class="config-box">
-            <div class="config-title">DESIGN EDITOR</div>
-            
-            <div class="set-row">
-                <span>WALLPAPER (Lien image)</span>
+            <h3 style="color:var(--accent); margin-top:0;">DESIGN EDITOR</h3>
+            <div class="set-row" style="margin-bottom:15px;">
+                <div style="color:#aaa; margin-bottom:5px;">Wallpaper URL</div>
                 <input type="text" id="cfg-bg" placeholder="https://..." oninput="previewTheme()">
             </div>
-            
-            <div class="set-row">
-                <span>COULEUR ACCENT (ex: #00ff95, red, blue)</span>
+            <div class="set-row" style="margin-bottom:15px;">
+                <div style="color:#aaa; margin-bottom:5px;">Couleur Accent</div>
                 <input type="text" id="cfg-color" placeholder="#00ff95" oninput="previewTheme()">
             </div>
-
             <div class="set-row">
-                <span>ARRONDI (ex: 0, 10, 20)</span>
-                <input type="number" id="cfg-radius" placeholder="4" oninput="previewTheme()">
+                <div style="color:#aaa; margin-bottom:5px;">Arrondi (px)</div>
+                <input type="number" id="cfg-radius" placeholder="8" oninput="previewTheme()">
             </div>
-
             <button class="btn-action btn-save" onclick="saveAndCloseConfig()">SAUVEGARDER</button>
             <button class="btn-action btn-cancel" onclick="closeConfig()">ANNULER</button>
         </div>
     </div>
 
     <div id="gallery">
-        <div class="gal-nav"><button class="gal-btn" onclick="prevImg(event)">◀</button><button class="gal-btn" onclick="nextImg(event)">▶</button></div>
+        <div style="position:absolute; width:100%; top:50%; display:flex; justify-content:space-between; transform:translateY(-50%); pointer-events:none;">
+            <button class="gal-btn" style="pointer-events:auto;" onclick="prevImg(event)">❮</button>
+            <button class="gal-btn" style="pointer-events:auto;" onclick="nextImg(event)">❯</button>
+        </div>
         <img id="gal-img" src="" onclick="event.stopPropagation()">
-        <button style="position:absolute; top:20px; right:20px; background:none; border:none; color:var(--accent); font-size:2rem; cursor:pointer;" onclick="closeGal()">×</button>
+        <button style="position:absolute; top:20px; right:20px; background:none; border:none; color:var(--accent); font-size:3rem; cursor:pointer;" onclick="closeGal()">×</button>
     </div>
 
     <div id="context-menu"></div>
 
     <aside class="sidebar">
-        <div class="brand" id="brand">STI2D.SYS</div>
+        <div class="brand" id="brand">STI2D</div>
         <div class="group-item active" onclick="setFolder(this, 'genesis')"># <span>Général</span></div>
         <div class="group-item" onclick="setFolder(this, 'projets')"># <span>Projets</span></div>
         <div class="group-item" onclick="setFolder(this, 'photos')"># <span>Archives</span></div>
         
         <div id="storage-container" onclick="toggleSecret()">
-            <div class="storage-header"><span>MEMORY</span><span id="st-perc">Calcul...</span></div>
+            <div class="storage-header"><span>STOCKAGE</span><span id="st-perc">--</span></div>
             <div class="progress-track"><div id="st-fill" class="progress-fill"></div></div>
         </div>
 
-        <button onclick="openConfig()" style="width:100%; background:rgba(255,255,255,0.05); border:1px solid #333; color:#bbb; padding:10px; cursor:pointer; margin-top:10px; border-radius:var(--radius); display:flex; align-items:center; justify-content:center; gap:10px;">
+        <button onclick="openConfig()" style="width:100%; background:rgba(255,255,255,0.1); border:none; color:#fff; padding:15px 0; cursor:pointer; margin-top:10px; border-radius:var(--radius);">
             ⚙️ <span class="btn-config-text">CONFIG</span>
         </button>
 
-        <button onclick="logout()" style="margin-top:10px; background:transparent; border:1px solid var(--danger); color:var(--danger); padding:6px; cursor:pointer; font-size:0.6rem; width:100%;">DISCONNECT</button>
+        <button onclick="logout()" style="margin-top:10px; background:transparent; border:1px solid var(--danger); color:var(--danger); padding:10px; cursor:pointer; font-size:0.7rem; width:100%; border-radius:var(--radius);">EXIT</button>
     </aside>
 
     <main class="main">
         <div id="chat"></div>
         <div class="input-bar">
-            <label style="cursor:pointer; font-size:1.4rem;">📎<input type="file" id="fup" hidden></label>
-            <input type="text" id="minput" placeholder="Enter command or message...">
-            <button id="sbtn">EXEC</button>
+            <label style="cursor:pointer; font-size:1.5rem; padding: 0 5px; display:flex; align-items:center;">
+                📎<input type="file" id="fup" hidden>
+            </label>
+            <input type="text" id="minput" placeholder="Message..." autocomplete="off">
+            <button id="sbtn">➤</button>
         </div>
     </main>
 
@@ -168,7 +195,7 @@
         const db = getFirestore(app);
         const storage = getStorage(app);
 
-        // --- AUTH SYSTEM ---
+        // --- AUTH ---
         const linput = document.getElementById('linput');
         const lockMsg = document.getElementById('lock-msg');
 
@@ -176,12 +203,12 @@
             if (linput.value.length === 4) {
                 if (linput.value === "1704") {
                     linput.style.borderColor = "var(--success)";
-                    lockMsg.innerText = "ACCESS GRANTED"; lockMsg.style.color = "var(--success)";
+                    lockMsg.innerText = "OK"; lockMsg.style.color = "var(--success)";
                     localStorage.setItem('mando_auth', 'true');
                     setTimeout(() => { document.getElementById('lock-screen').style.display = 'none'; startSync(); }, 600);
                 } else {
                     linput.classList.add('shake');
-                    lockMsg.innerText = "WRONG CODE"; lockMsg.style.color = "var(--danger)";
+                    lockMsg.innerText = "ERREUR"; lockMsg.style.color = "var(--danger)";
                     setTimeout(() => { linput.value = ""; linput.classList.remove('shake'); lockMsg.innerText = ""; }, 1000);
                 }
             }
@@ -190,7 +217,7 @@
         if (localStorage.getItem('mando_auth') === 'true') document.getElementById('lock-screen').style.display = 'none';
         window.logout = () => { localStorage.clear(); location.reload(); };
 
-        // --- THEME ENGINE (EDITOR) ---
+        // --- THEME ---
         window.openConfig = () => {
             const theme = JSON.parse(localStorage.getItem('mando_theme') || '{}');
             document.getElementById('cfg-bg').value = theme.bg || "";
@@ -198,33 +225,24 @@
             document.getElementById('cfg-radius').value = theme.radius ? parseInt(theme.radius) : "";
             document.getElementById('config-modal').style.display = 'flex';
         };
-
-        window.closeConfig = () => {
-            document.getElementById('config-modal').style.display = 'none';
-            applyTheme(); // Revert changes if canceled
-        };
-
+        window.closeConfig = () => { document.getElementById('config-modal').style.display = 'none'; applyTheme(); };
         window.previewTheme = () => {
             const bg = document.getElementById('cfg-bg').value;
             const color = document.getElementById('cfg-color').value;
             const radius = document.getElementById('cfg-radius').value;
-
             if(bg) document.body.style.backgroundImage = `url(${bg})`;
             if(color) document.documentElement.style.setProperty('--accent', color);
             if(radius) document.documentElement.style.setProperty('--radius', radius + "px");
         };
-
         window.saveAndCloseConfig = () => {
-            const config = { 
+            localStorage.setItem('mando_theme', JSON.stringify({ 
                 bg: document.getElementById('cfg-bg').value, 
                 accent: document.getElementById('cfg-color').value,
                 radius: document.getElementById('cfg-radius').value + "px" 
-            };
-            localStorage.setItem('mando_theme', JSON.stringify(config));
+            }));
             document.getElementById('config-modal').style.display = 'none';
             applyTheme();
         };
-
         function applyTheme() {
             const theme = JSON.parse(localStorage.getItem('mando_theme') || '{}');
             if(theme.bg) document.body.style.backgroundImage = `url(${theme.bg})`;
@@ -233,14 +251,14 @@
         }
         applyTheme();
 
-        // --- CORE LOGIC ---
+        // --- LOGIC ---
         let currentFolder = "genesis", isSecret = false, unsubscribe = null, galleryList = [], currentGalIdx = 0;
         const folders = ['genesis', 'projets', 'photos'], MAX_STORAGE = 5 * 1024 * 1024 * 1024;
 
         window.toggleSecret = () => {
             isSecret = !isSecret;
             document.body.classList.toggle('vault-mode', isSecret);
-            document.getElementById('brand').innerText = isSecret ? "VAULT.SEC" : "STI2D.SYS";
+            document.getElementById('brand').innerText = isSecret ? "VAULT" : "STI2D";
             startSync();
         };
 
@@ -253,34 +271,32 @@
             e.preventDefault();
             const data = JSON.parse(decodeURIComponent(dataText));
             const menu = document.getElementById('context-menu');
-            menu.style.left = Math.min(e.pageX, window.innerWidth - 210) + 'px';
-            menu.style.top = Math.min(e.pageY, window.innerHeight - 200) + 'px';
+            // Centrage mobile simplifié
+            if(window.innerWidth > 600) {
+                 menu.style.left = Math.min(e.pageX, window.innerWidth - 210) + 'px';
+                 menu.style.top = Math.min(e.pageY, window.innerHeight - 200) + 'px';
+            }
             menu.style.display = 'block';
             
-            let moveOps = folders.filter(f => f !== currentFolder).map(f => `<div class="menu-item" onclick="moveMsg('${id}', '${f}')">>> MOVE TO #${f}</div>`).join('');
+            let moveOps = folders.filter(f => f !== currentFolder).map(f => `<div class="menu-item" onclick="moveMsg('${id}', '${f}')">Vers #${f}</div>`).join('');
             const urlSafe = data.url ? encodeURIComponent(data.url) : '';
             
             menu.innerHTML = `
-                <div class="menu-item" onclick="pinMsg('${id}', ${!data.isPinned})">${data.isPinned ? '>> UNPIN' : '>> PIN TO TOP'}</div>
+                <div class="menu-item" onclick="pinMsg('${id}', ${!data.isPinned})">${data.isPinned ? 'DÉTACHER' : 'ÉPINGLER'}</div>
                 ${moveOps}
-                <div class="menu-item" style="color:var(--danger);" onclick="delMsg('${id}', '${data.type}', '${urlSafe}')">>> PURGE DATA</div>
+                <div class="menu-item" style="color:var(--danger);" onclick="delMsg('${id}', '${data.type}', '${urlSafe}')">SUPPRIMER</div>
             `;
         };
         window.hideMenu = () => document.getElementById('context-menu').style.display = 'none';
 
         window.delMsg = async (id, type, urlEncoded) => {
-            if(!confirm("SUPPRIMER DÉFINITIVEMENT ? (IRRÉVERSIBLE)")) return;
+            if(!confirm("SUPPRIMER ?")) return;
             if((type === 'image' || type === 'file') && urlEncoded) {
-                const url = decodeURIComponent(urlEncoded);
-                try {
-                    const fileRef = ref(storage, url);
-                    await deleteObject(fileRef);
-                } catch (err) { console.warn("Fichier introuvable/déjà supprimé"); }
+                try { await deleteObject(ref(storage, decodeURIComponent(urlEncoded))); } catch (err) {}
             }
             await deleteDoc(doc(db, "messages", id));
             document.getElementById('context-menu').style.display = 'none';
         };
-
         window.pinMsg = async (id, val) => await updateDoc(doc(db, "messages", id), { isPinned: val });
         window.moveMsg = async (id, dest) => await updateDoc(doc(db, "messages", id), { folder: isSecret ? `secret_${dest}` : dest });
 
@@ -288,57 +304,47 @@
         window.closeGal = () => document.getElementById('gallery').style.display = 'none';
         window.nextImg = (e) => { e.stopPropagation(); currentGalIdx = (currentGalIdx + 1) % galleryList.length; document.getElementById('gal-img').src = galleryList[currentGalIdx]; };
         window.prevImg = (e) => { e.stopPropagation(); currentGalIdx = (currentGalIdx - 1 + galleryList.length) % galleryList.length; document.getElementById('gal-img').src = galleryList[currentGalIdx]; };
-        
-        document.addEventListener('keydown', (e) => {
-            if (document.getElementById('gallery').style.display === 'flex') {
-                if(e.key === "ArrowRight") nextImg(e); if(e.key === "ArrowLeft") prevImg(e); if(e.key === "Escape") closeGal();
-            }
-        });
 
         function linkify(text) {
-            const urlRegex = /(https?:\/\/[^\s]+)/g;
-            return text.replace(urlRegex, function(url) {
-                return `<a href="${url}" target="_blank">${url}</a>`;
-            });
+            return text.replace(/(https?:\/\/[^\s]+)/g, url => `<a href="${url}" target="_blank">${url}</a>`);
         }
 
         function startSync() {
             if (unsubscribe) unsubscribe();
             const path = isSecret ? `secret_${currentFolder}` : currentFolder;
-            
             unsubscribe = onSnapshot(query(collection(db, "messages"), orderBy("createdAt", "asc")), (snap) => {
                 const chat = document.getElementById('chat'); 
                 chat.innerHTML = ""; 
-                
                 let totalBytes = 0; galleryList = [];
                 
                 snap.forEach(d => {
                     const m = d.data();
                     if (m.type === 'image' || m.type === 'file') totalBytes += Number(m.fileSize || 0);
-
                     if(m.folder === path) {
                         if(m.type === 'image') galleryList.push(m.url);
                         const div = document.createElement('div');
                         div.className = `bubble ${m.isPinned ? 'pinned' : ''}`;
-                        const safeData = encodeURIComponent(JSON.stringify(m));
-                        div.oncontextmenu = (e) => openMenu(e, d.id, safeData);
+                        div.oncontextmenu = (e) => openMenu(e, d.id, encodeURIComponent(JSON.stringify(m)));
                         
-                        let html = `<div style="font-size:0.55rem; opacity:0.3; margin-bottom:4px;">[${m.createdAt?.toDate().toLocaleTimeString() || ''}]</div>`;
+                        // Support appui long pour mobile (remplace clic droit)
+                        let pressTimer;
+                        div.ontouchstart = (e) => { pressTimer = setTimeout(() => openMenu(e, d.id, encodeURIComponent(JSON.stringify(m))), 800); };
+                        div.ontouchend = () => clearTimeout(pressTimer);
+
+                        let html = `<div style="font-size:0.6rem; opacity:0.4; margin-bottom:4px;">${m.createdAt?.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) || ''}</div>`;
                         if(m.text) html += `<p style="margin:0;">${linkify(m.text)}</p>`;
                         if(m.type === 'image') html += `<img src="${m.url}" class="img-preview" onclick="openGal('${m.url}')">`;
                         div.innerHTML = html; chat.appendChild(div);
                     }
                 });
-                
-                chat.scrollTop = chat.scrollHeight;
+                setTimeout(() => chat.scrollTop = chat.scrollHeight, 100);
 
                 let usedMo = totalBytes / (1024 * 1024);
                 let usedGo = totalBytes / (1024 * 1024 * 1024);
                 let perc = (totalBytes / MAX_STORAGE) * 100;
-                let textDisplay = usedGo < 0.01 ? usedMo.toFixed(2) + " Mo" : usedGo.toFixed(2) + " Go";
-                document.getElementById('st-perc').innerText = `${textDisplay} / 5.00 Go`;
-                let visualPerc = (totalBytes > 0 && perc < 2) ? 2 : perc; 
-                document.getElementById('st-fill').style.width = Math.min(visualPerc, 100) + "%";
+                let textDisplay = usedGo < 0.01 ? Math.round(usedMo) + " Mo" : usedGo.toFixed(2) + " Go";
+                document.getElementById('st-perc').innerText = textDisplay;
+                document.getElementById('st-fill').style.width = Math.min((totalBytes > 0 && perc < 2) ? 2 : perc, 100) + "%";
             });
         }
 
@@ -346,6 +352,8 @@
             const inp = document.getElementById('minput'); if (!inp.value.trim()) return;
             await addDoc(collection(db, "messages"), { text: inp.value, folder: isSecret ? `secret_${currentFolder}` : currentFolder, createdAt: serverTimestamp(), type: 'text', isPinned: false, fileSize: 0 });
             inp.value = "";
+            // Fix clavier : remet le focus
+            inp.focus();
         };
         document.getElementById('sbtn').onclick = send;
         document.getElementById('minput').onkeydown = (e) => { if (e.key === 'Enter') send(); };
@@ -354,22 +362,11 @@
             const file = e.target.files[0]; if (!file) return;
             const path = isSecret ? `secret_${currentFolder}` : currentFolder;
             const t = uploadBytesResumable(ref(storage, `${path}/${Date.now()}_${file.name}`), file);
-            
-            const btn = document.getElementById('sbtn');
-            const originalText = btn.innerText;
-            btn.innerText = "UP...";
-
+            const btn = document.getElementById('sbtn'); btn.innerText = "⏳";
             t.on('state_changed', null, null, async () => {
                 const url = await getDownloadURL(t.snapshot.ref);
-                await addDoc(collection(db, "messages"), { 
-                    url, 
-                    type: file.type.startsWith('image/') ? 'image' : 'file', 
-                    folder: path, 
-                    createdAt: serverTimestamp(), 
-                    isPinned: false, 
-                    fileSize: file.size 
-                });
-                btn.innerText = originalText;
+                await addDoc(collection(db, "messages"), { url, type: file.type.startsWith('image/') ? 'image' : 'file', folder: path, createdAt: serverTimestamp(), isPinned: false, fileSize: file.size });
+                btn.innerText = "➤";
             });
         };
         if (localStorage.getItem('mando_auth') === 'true') startSync();
