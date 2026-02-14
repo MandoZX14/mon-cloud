@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Mando Cloud | Mobile</title>
+    <title>Mando Cloud | Mobile Secure</title>
     <style id="custom-theme">
         :root { 
             --accent: #00ff95; 
@@ -13,7 +13,7 @@
             --text: #e0e0e0; 
             --danger: #ff4444; 
             --success: #00ff95;
-            --radius: 8px; /* Plus arrondi pour mobile */
+            --radius: 8px; 
             --panel-op: 0.95; 
             --font-main: 'Consolas', 'Monaco', monospace; 
         }
@@ -21,30 +21,30 @@
     <style>
         * { box-sizing: border-box; transition: 0.2s; font-family: var(--font-main); -webkit-tap-highlight-color: transparent; }
         
-        /* FIX MOBILE : Utilisation de dvh pour gérer le clavier virtuel */
         body { 
             background: var(--bg); background-size: cover; background-position: center; 
             color: var(--text); margin: 0; 
-            height: 100dvh; /* Dynamic Viewport Height */
+            height: 100dvh; 
             display: flex; overflow: hidden; 
-            position: fixed; /* Fixe le body pour éviter le scroll élastique */
-            width: 100%;
+            position: fixed; width: 100%;
         }
         
-        /* LOCK SCREEN */
+        /* LOCK SCREEN (FORCE AU DÉMARRAGE) */
         #lock-screen { position: fixed; inset: 0; background: #000; z-index: 10005; display: flex; align-items: center; justify-content: center; flex-direction: column; }
         .lock-box { padding: 30px; border: 1px solid var(--accent); border-radius: var(--radius); background: #0a0c10; text-align: center; width: 90%; max-width: 320px; }
         .lock-input { background: #000; border: 1px solid var(--accent); color: var(--accent); padding: 15px; font-size: 1.5rem; width: 100%; text-align: center; outline: none; letter-spacing: 5px; margin-bottom: 15px; border-radius: var(--radius); }
         #lock-msg { height: 20px; font-size: 0.9rem; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; }
+        .shake { animation: shake 0.3s ease-in-out; border-color: var(--danger) !important; color: var(--danger) !important; }
+        @keyframes shake { 0% { transform: translateX(0); } 25% { transform: translateX(-8px); } 50% { transform: translateX(8px); } 100% { transform: translateX(0); } }
 
-        /* SIDEBAR (Version Mobile Optimisée) */
+        /* SIDEBAR */
         .sidebar { 
             width: 250px; background: rgba(26, 29, 38, var(--panel-op)); 
             border-right: 1px solid rgba(255,255,255,0.05); padding: 20px; 
             display: flex; flex-direction: column; z-index: 10; backdrop-filter: blur(10px); 
         }
         .brand { color: var(--accent); font-weight: bold; font-size: 1.2rem; margin-bottom: 30px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; }
-        .group-item { padding: 15px; border-radius: var(--radius); margin-bottom: 8px; color: #7a8296; cursor: pointer; border-left: 3px solid transparent; font-size: 1.1rem; /* Plus gros pour le doigt */ }
+        .group-item { padding: 15px; border-radius: var(--radius); margin-bottom: 8px; color: #7a8296; cursor: pointer; border-left: 3px solid transparent; font-size: 1.1rem; }
         .group-item.active { border-left-color: var(--accent); background: rgba(0,255,149,0.05); color: #fff; }
         
         #storage-container { margin-top: auto; padding: 15px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: var(--radius); cursor: pointer; margin-bottom: 10px; }
@@ -52,47 +52,25 @@
         .progress-fill { height: 100%; background: var(--accent); width: 0%; transition: width 0.8s ease; }
         
         /* CHAT AREA */
-        .main { flex: 1; display: flex; flex-direction: column; position: relative; background: rgba(13, 15, 20, 0.6); min-width: 0; /* Important pour flexbox */ }
-        
-        #chat { 
-            flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 15px; 
-            scroll-behavior: smooth; 
-            -webkit-overflow-scrolling: touch; /* Scroll fluide sur iOS */
-        }
+        .main { flex: 1; display: flex; flex-direction: column; position: relative; background: rgba(13, 15, 20, 0.6); min-width: 0; }
+        #chat { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 15px; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; }
         
         .bubble { background: rgba(30, 34, 45, 0.9); padding: 14px; border-radius: var(--radius); border-right: 4px solid var(--accent); align-self: flex-start; max-width: 90%; backdrop-filter: blur(5px); word-wrap: break-word; font-size: 1rem; line-height: 1.4; }
         .bubble.pinned { border-right-color: gold; background: rgba(255, 215, 0, 0.05); }
         .img-preview { max-width: 100%; border-radius: 4px; margin-top: 10px; cursor: pointer; }
         .bubble a { color: var(--accent); text-decoration: underline; font-weight: bold; }
 
-        /* INPUT BAR (Fix Clavier) */
-        .input-bar { 
-            padding: 10px; background: #0a0c10; display: flex; gap: 10px; 
-            border-top: 1px solid #333; z-index: 20;
-            padding-bottom: env(safe-area-inset-bottom); /* Fix pour iPhone X+ */
-        }
-        
-        /* FIX CLAVIER CRITIQUE : Font-size 16px empêche le zoom auto sur iOS */
-        #minput { 
-            flex: 1; background: #1a1d26; border: 1px solid #333; color: #fff; 
-            padding: 14px; outline: none; border-radius: 25px; 
-            font-size: 16px; /* CRUCIAL */
-        }
-        
-        #sbtn { 
-            background: var(--accent); color: #000; border: none; 
-            padding: 0 20px; cursor: pointer; font-weight: bold; 
-            border-radius: 25px; font-size: 0.9rem;
-        }
+        /* INPUT BAR */
+        .input-bar { padding: 10px; background: #0a0c10; display: flex; gap: 10px; border-top: 1px solid #333; z-index: 20; padding-bottom: env(safe-area-inset-bottom); }
+        #minput { flex: 1; background: #1a1d26; border: 1px solid #333; color: #fff; padding: 14px; outline: none; border-radius: 25px; font-size: 16px; }
+        #sbtn { background: var(--accent); color: #000; border: none; padding: 0 20px; cursor: pointer; font-weight: bold; border-radius: 25px; font-size: 0.9rem; }
 
-        /* MEDIA QUERIES POUR MOBILE */
+        /* MOBILE OPTIMIZATIONS */
         @media (max-width: 600px) { 
             .sidebar { width: 70px; padding: 10px; align-items: center; } 
             .brand, .group-item span, .storage-header, .set-row span, .btn-config-text { display: none; } 
             .group-item { padding: 15px 5px; text-align: center; width: 100%; margin-bottom: 15px; font-size: 1.2rem; }
             .lock-box { width: 95%; padding: 20px; }
-            
-            /* Ajustement Menu Contextuel Mobile */
             #context-menu { width: 250px; left: 50% !important; top: 50% !important; transform: translate(-50%, -50%); box-shadow: 0 0 50px rgba(0,0,0,0.8); border: 1px solid var(--accent); }
             .menu-item { padding: 15px; font-size: 1rem; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
         }
@@ -109,6 +87,8 @@
         #gallery { position: fixed; inset: 0; background: #000; z-index: 10010; display: none; align-items: center; justify-content: center; }
         #gal-img { max-width: 100%; max-height: 90vh; }
         .gal-btn { padding: 20px; font-size: 2rem; background: transparent; border: none; color: var(--accent); }
+
+        body.vault-mode { --accent: var(--secret); }
     </style>
 </head>
 <body onclick="hideMenu()" oncontextmenu="return false;">
@@ -195,16 +175,22 @@
         const db = getFirestore(app);
         const storage = getStorage(app);
 
-        // --- AUTH ---
+        // --- GESTION SÉCURITÉ (FORCER LOCK) ---
+        // 1. On supprime toute connexion mémorisée dès le chargement
+        localStorage.removeItem('mando_auth'); 
+        
         const linput = document.getElementById('linput');
         const lockMsg = document.getElementById('lock-msg');
+
+        // On s'assure que le lockscreen est visible
+        document.getElementById('lock-screen').style.display = 'flex';
 
         linput.addEventListener('input', () => {
             if (linput.value.length === 4) {
                 if (linput.value === "1704") {
                     linput.style.borderColor = "var(--success)";
                     lockMsg.innerText = "OK"; lockMsg.style.color = "var(--success)";
-                    localStorage.setItem('mando_auth', 'true');
+                    // On ne stocke RIEN dans le localStorage pour obliger à retaper le code au refresh
                     setTimeout(() => { document.getElementById('lock-screen').style.display = 'none'; startSync(); }, 600);
                 } else {
                     linput.classList.add('shake');
@@ -214,8 +200,7 @@
             }
         });
 
-        if (localStorage.getItem('mando_auth') === 'true') document.getElementById('lock-screen').style.display = 'none';
-        window.logout = () => { localStorage.clear(); location.reload(); };
+        window.logout = () => { location.reload(); }; // Reload force le re-verrouillage
 
         // --- THEME ---
         window.openConfig = () => {
@@ -251,14 +236,15 @@
         }
         applyTheme();
 
-        // --- LOGIC ---
+        // --- LOGIQUE ---
         let currentFolder = "genesis", isSecret = false, unsubscribe = null, galleryList = [], currentGalIdx = 0;
         const folders = ['genesis', 'projets', 'photos'], MAX_STORAGE = 5 * 1024 * 1024 * 1024;
 
         window.toggleSecret = () => {
             isSecret = !isSecret;
             document.body.classList.toggle('vault-mode', isSecret);
-            document.getElementById('brand').innerText = isSecret ? "VAULT" : "STI2D";
+            // J'ai enlevé le changement de texte "VAULT" pour que ce soit discret (cache le vault)
+            // Seule la couleur change (défini dans le CSS body.vault-mode)
             startSync();
         };
 
@@ -271,7 +257,6 @@
             e.preventDefault();
             const data = JSON.parse(decodeURIComponent(dataText));
             const menu = document.getElementById('context-menu');
-            // Centrage mobile simplifié
             if(window.innerWidth > 600) {
                  menu.style.left = Math.min(e.pageX, window.innerWidth - 210) + 'px';
                  menu.style.top = Math.min(e.pageY, window.innerHeight - 200) + 'px';
@@ -326,7 +311,6 @@
                         div.className = `bubble ${m.isPinned ? 'pinned' : ''}`;
                         div.oncontextmenu = (e) => openMenu(e, d.id, encodeURIComponent(JSON.stringify(m)));
                         
-                        // Support appui long pour mobile (remplace clic droit)
                         let pressTimer;
                         div.ontouchstart = (e) => { pressTimer = setTimeout(() => openMenu(e, d.id, encodeURIComponent(JSON.stringify(m))), 800); };
                         div.ontouchend = () => clearTimeout(pressTimer);
@@ -352,7 +336,6 @@
             const inp = document.getElementById('minput'); if (!inp.value.trim()) return;
             await addDoc(collection(db, "messages"), { text: inp.value, folder: isSecret ? `secret_${currentFolder}` : currentFolder, createdAt: serverTimestamp(), type: 'text', isPinned: false, fileSize: 0 });
             inp.value = "";
-            // Fix clavier : remet le focus
             inp.focus();
         };
         document.getElementById('sbtn').onclick = send;
@@ -369,7 +352,6 @@
                 btn.innerText = "➤";
             });
         };
-        if (localStorage.getItem('mando_auth') === 'true') startSync();
     </script>
 </body>
 </html>
