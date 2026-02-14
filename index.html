@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Mando Cloud | Media Fix</title>
+    <title>Mando Cloud | Inline Media</title>
     <style id="custom-theme">
         :root { 
             --accent: #00ff95; 
@@ -58,8 +58,11 @@
         .bubble { background: rgba(30, 34, 45, 0.9); padding: 14px; border-radius: var(--radius); border-right: 4px solid var(--accent); align-self: flex-start; max-width: 90%; backdrop-filter: blur(5px); word-wrap: break-word; font-size: 1rem; line-height: 1.4; }
         .bubble.pinned { border-right-color: gold; background: rgba(255, 215, 0, 0.05); }
         
-        /* MEDIA PREVIEW (IMAGES & VIDEOS) */
-        .media-preview { max-width: 100%; border-radius: 4px; margin-top: 10px; cursor: pointer; display: block; }
+        /* STYLE DES LECTEURS INTÉGRÉS */
+        .inline-media { max-width: 100%; border-radius: 4px; margin-top: 10px; display: block; }
+        video.inline-media { max-height: 300px; background: #000; }
+        audio.inline-media { width: 100%; min-width: 200px; }
+        iframe.inline-media { width: 100%; height: 300px; border: none; background: #fff; }
         
         .bubble a { color: var(--accent); text-decoration: underline; font-weight: bold; }
         .file-link { display: flex; align-items: center; gap: 10px; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 4px; margin-top: 5px; text-decoration: none !important; color: #fff !important; border: 1px solid rgba(255,255,255,0.1); }
@@ -162,7 +165,7 @@
         const db = getFirestore(app);
         const storage = getStorage(app);
 
-        // AUTH & SECURITY
+        // AUTH
         localStorage.removeItem('mando_auth'); 
         const linput = document.getElementById('linput');
         const lockMsg = document.getElementById('lock-msg');
@@ -175,8 +178,7 @@
                     lockMsg.innerText = "OK"; lockMsg.style.color = "var(--success)";
                     setTimeout(() => { document.getElementById('lock-screen').style.display = 'none'; startSync(); }, 600);
                 } else {
-                    linput.classList.add('shake');
-                    lockMsg.innerText = "ERREUR"; lockMsg.style.color = "var(--danger)";
+                    linput.classList.add('shake'); lockMsg.innerText = "ERREUR"; lockMsg.style.color = "var(--danger)";
                     setTimeout(() => { linput.value = ""; linput.classList.remove('shake'); lockMsg.innerText = ""; }, 1000);
                 }
             }
@@ -213,7 +215,7 @@
         }
         applyTheme();
 
-        // CORE LOGIC
+        // LOGIC
         let currentFolder = "genesis", isSecret = false, unsubscribe = null, galleryList = [], currentGalIdx = 0;
         const folders = ['genesis', 'projets', 'photos'], MAX_STORAGE = 5 * 1024 * 1024 * 1024;
 
@@ -242,9 +244,7 @@
 
         window.delMsg = async (id, type, urlEncoded) => {
             if(!confirm("SUPPRIMER ?")) return;
-            if((type === 'image' || type === 'video' || type === 'file') && urlEncoded) {
-                try { await deleteObject(ref(storage, decodeURIComponent(urlEncoded))); } catch (err) {}
-            }
+            if(urlEncoded) { try { await deleteObject(ref(storage, decodeURIComponent(urlEncoded))); } catch (err) {} }
             await deleteDoc(doc(db, "messages", id));
             document.getElementById('context-menu').style.display = 'none';
         };
@@ -268,7 +268,8 @@
                 
                 snap.forEach(d => {
                     const m = d.data();
-                    if (m.type === 'image' || m.type === 'video' || m.type === 'file') totalBytes += Number(m.fileSize || 0);
+                    if (m.fileSize) totalBytes += Number(m.fileSize);
+                    
                     if(m.folder === path) {
                         if(m.type === 'image') galleryList.push(m.url);
                         const div = document.createElement('div');
@@ -282,14 +283,12 @@
                         let html = `<div style="font-size:0.6rem; opacity:0.4; margin-bottom:4px;">${m.createdAt?.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) || ''}</div>`;
                         if(m.text) html += `<p style="margin:0;">${linkify(m.text)}</p>`;
                         
-                        // FIX MEDIA DISPLAY
-                        if(m.type === 'image') {
-                            html += `<img src="${m.url}" class="media-preview" onclick="openGal('${m.url}')">`;
-                        } else if(m.type === 'video') {
-                            html += `<video src="${m.url}" class="media-preview" controls></video>`;
-                        } else if(m.type === 'file') {
-                            html += `<a href="${m.url}" target="_blank" class="file-link"><span>📄</span> Télécharger le fichier</a>`;
-                        }
+                        // LECTEURS INTEGRES
+                        if(m.type === 'image') html += `<img src="${m.url}" class="inline-media" onclick="openGal('${m.url}')">`;
+                        else if(m.type === 'video') html += `<video src="${m.url}" class="inline-media" controls></video>`;
+                        else if(m.type === 'audio') html += `<audio src="${m.url}" class="inline-media" controls></audio>`;
+                        else if(m.type === 'pdf') html += `<iframe src="${m.url}" class="inline-media"></iframe>`;
+                        else if(m.type === 'file') html += `<a href="${m.url}" target="_blank" class="file-link"><span>📄</span> Fichier à télécharger</a>`;
                         
                         div.innerHTML = html; chat.appendChild(div);
                     }
@@ -319,10 +318,12 @@
             const t = uploadBytesResumable(ref(storage, `${path}/${Date.now()}_${file.name}`), file);
             const btn = document.getElementById('sbtn'); btn.innerText = "⏳";
             
-            // DETECTION DU TYPE
+            // DETECTION INTELLIGENTE
             let type = 'file';
             if(file.type.startsWith('image/')) type = 'image';
             else if(file.type.startsWith('video/')) type = 'video';
+            else if(file.type.startsWith('audio/')) type = 'audio';
+            else if(file.type === 'application/pdf') type = 'pdf';
 
             t.on('state_changed', null, null, async () => {
                 const url = await getDownloadURL(t.snapshot.ref);
